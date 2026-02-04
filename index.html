@@ -34,7 +34,7 @@
 
     <script>
         // --- API CONFIG ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbyjUyYAHrRkqrVD5io58e393vf_fw_TniEUh0tArEVNQmwxjPFeJvvacb4GOdsv9rkC/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzn4ijSYqAUqPjMkEeOrc_WmTOQYZRgmxTn2P-mKMDjDonbX-ILDellVOsd5YfX4WQv/exec";
 
         const RUBRIC_DATA = [
             { name: "Knowledge", levels: { 1: "Poor", 2: "Below Expectation", 3: "Average", 4: "Exceeding", 5: "Exceptional" } },
@@ -43,12 +43,12 @@
         ];
 
         const PROFILES = [
-            { id: "omar", name: "Omar Khalid", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure", "Highly agile"], answers: { k: 4, s: 3, a: 4 } },
-            { id: "youseff", name: "Youseff Ahmad", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Follows guidelines", "Average targets"], answers: { k: 4, s: 3, a: 3 } },
-            { id: "faisal", name: "Faisal Bin Saud", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors juniors", "Flow improvement"], answers: { k: 3, s: 4, a: 4 } },
-            { id: "fahd", name: "Fahd Grey", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling"], answers: { k: 4, s: 1, a: 2 } },
-            { id: "ali", name: "Ali Mansour", avatar: "ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: ["Inventory expert", "Fast dispensing", "Resists management"], answers: { k: 3, s: 4, a: 1 } },
-            { id: "hossam", name: "Hossam Hassan", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Sales skills", "Cross-selling", "Inconsistent safety"], answers: { k: 2, s: 4, a: 2 } }
+            { id: "omar", name: "Omar", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure", "Highly agile"], answers: { k: 4, s: 3, a: 4 } },
+            { id: "youseff", name: "Youseff", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Follows guidelines", "Average targets"], answers: { k: 4, s: 3, a: 3 } },
+            { id: "faisal", name: "Faisal", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors juniors", "Flow improvement"], answers: { k: 3, s: 4, a: 4 } },
+            { id: "fahd", name: "Fahd", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling"], answers: { k: 4, s: 1, a: 2 } },
+            { id: "ali", name: "Ali", avatar: "ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: ["Inventory expert", "Fast dispensing", "Resists management"], answers: { k: 3, s: 4, a: 1 } },
+            { id: "hossam", name: "Hossam", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Sales skills", "Cross-selling", "Inconsistent safety"], answers: { k: 2, s: 4, a: 2 } }
         ];
 
         let state = {
@@ -72,14 +72,23 @@
 
         async function fetchRegistry() {
             try {
-                const res = await fetch(API_URL);
+                // Add cache-busting to avoid stale GET responses from proxies or CDNs
+                const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
                 if (!res.ok) throw new Error("Network error");
                 const data = await res.json();
-                state.registry = Array.isArray(data) ? data : [];
+                console.debug('fetchRegistry response:', data);
+                // Accept either a top-level array or an object with a `registry` array
+                let registryData = [];
+                if (Array.isArray(data)) registryData = data;
+                else if (data && Array.isArray(data.registry)) registryData = data.registry;
+                else registryData = [];
+                state.registry = registryData;
                 const cfg = state.registry.find(t => t.name === '__SESSION_CONFIG__');
                 if (cfg && cfg.completedProfiles && cfg.completedProfiles[0]) {
                     state.config = JSON.parse(cfg.completedProfiles[0]);
                 }
+                // Update UI when registry changes
+                render();
                 return state.registry;
             } catch (err) {
                 console.error("Fetch Registry Error:", err);
@@ -91,15 +100,18 @@
             state.isSyncing = true;
             renderSyncStatus();
             try {
-                const res = await fetch(API_URL, {
+                const res = await fetch(API_URL + '?_=' + Date.now(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
+                    cache: 'no-store'
                 });
                 if (!res.ok) throw new Error("Network response not ok");
                 const result = await res.json();
-                if (result.success) {
-                    state.registry = result.registry;
+                console.debug('apiCall result:', result);
+                if (result && result.success) {
+                    // Prefer registry from response, but fallback to refetch if absent
+                    if (Array.isArray(result.registry)) state.registry = result.registry;
                     if (state.team) {
                         const updatedSelf = state.registry.find(t => t.name === (payload.team.newName || payload.team.name));
                         if (updatedSelf) {
@@ -107,6 +119,8 @@
                             localStorage.setItem('team_data', JSON.stringify(state.team));
                         }
                     }
+                    // Immediately re-render so UI reflects changes without waiting
+                    render();
                     return true;
                 }
                 return false;
