@@ -7,43 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: contain;
-        }
-
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes pop {
-            0% { transform: scale(0.9); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-
-        .coin-bounce {
-            animation: bounce 2s infinite;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .spin-slow {
-            animation: spin 3s linear infinite;
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Hide scrollbars */
+        @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .coin-bounce { animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .spin-slow { animation: spin 3s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -59,59 +30,27 @@
 </head>
 <body class="antialiased text-slate-900 select-none">
     <div id="root" class="min-h-screen"></div>
-
-    <!-- Modals Container -->
     <div id="modal-container" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"></div>
 
     <script>
         // --- API CONFIG ---
-        // Using the user-provided Apps Script URL
-        const API_URL = "https://script.google.com/macros/s/AKfycbwg8jH4oJFfNodVkhAfRjzWE2cczw1_OIBcFJBgcXAeuHuvKZBpn7UCKsZlHKrGTZ2d/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyjUyYAHrRkqrVD5io58e393vf_fw_TniEUh0tArEVNQmwxjPFeJvvacb4GOdsv9rkC/exec";
 
-        // --- DATA & CONSTANTS ---
         const RUBRIC_DATA = [
-            { 
-                name: "Knowledge", 
-                levels: { 
-                    1: "Poor", 
-                    2: "Below Expectation", 
-                    3: "Average/ Meeting Expectation", 
-                    4: "Exceeding expectation", 
-                    5: "Exceptional" 
-                } 
-            },
-            { 
-                name: "Skills", 
-                levels: { 
-                    1: "Lack core skills required to do his job", 
-                    2: "Have core skills, needs development under supervision", 
-                    3: "Have core skills with minimal support", 
-                    4: "Mentoring ability or works independently", 
-                    5: "Mentoring ability AND works independently" 
-                } 
-            },
-            { 
-                name: "Attitude", 
-                levels: { 
-                    1: "Consistently displays unprofessional behavior and frequently resists, manipulates and breaks the rules", 
-                    2: "Occasionally shows acceptable behavior but is inconsistent.", 
-                    3: "Generally, behaves appropriately and follows guidelines.", 
-                    4: "Proactive, and has distinguished behavior that give him edge over others, e.g., highly agile or accept and look for feedback", 
-                    5: "Proactive role Model, Always models exceptional behavior and professionalism and fosters positive culture" 
-                } 
-            }
+            { name: "Knowledge", levels: { 1: "Poor", 2: "Below Expectation", 3: "Average", 4: "Exceeding", 5: "Exceptional" } },
+            { name: "Skills", levels: { 1: "Lack core skills", 2: "Needs supervision", 3: "Minimal support", 4: "Mentoring ability", 5: "Expert" } },
+            { name: "Attitude", levels: { 1: "Unprofessional", 2: "Inconsistent", 3: "Follows guidelines", 4: "Proactive", 5: "Role Model" } }
         ];
 
         const PROFILES = [
-            { id: "omar", name: "Omar Khalid", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure well", "Highly agile", "Seeks feedback"], answers: { k: 4, s: 3, a: 4 } },
-            { id: "youseff", name: "Youseff Ahmad", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Consistently follows guidelines", "Maintains average targets"], answers: { k: 4, s: 3, a: 3 } },
-            { id: "faisal", name: "Faisal Bin Saud", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors junior staff", "Proactive flow improvement"], answers: { k: 3, s: 4, a: 4 } },
-            { id: "fahd", name: "Fahd Grey", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling skills"], answers: { k: 4, s: 1, a: 2 } },
+            { id: "omar", name: "Omar Khalid", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure", "Highly agile"], answers: { k: 4, s: 3, a: 4 } },
+            { id: "youseff", name: "Youseff Ahmad", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Follows guidelines", "Average targets"], answers: { k: 4, s: 3, a: 3 } },
+            { id: "faisal", name: "Faisal Bin Saud", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors juniors", "Flow improvement"], answers: { k: 3, s: 4, a: 4 } },
+            { id: "fahd", name: "Fahd Grey", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling"], answers: { k: 4, s: 1, a: 2 } },
             { id: "ali", name: "Ali Mansour", avatar: "ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: ["Inventory expert", "Fast dispensing", "Resists management"], answers: { k: 3, s: 4, a: 1 } },
-            { id: "hossam", name: "Hossam Hassan", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Exceptional sales skills", "Efficient cross-selling", "Inconsistent safety adherence"], answers: { k: 2, s: 4, a: 2 } }
+            { id: "hossam", name: "Hossam Hassan", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Sales skills", "Cross-selling", "Inconsistent safety"], answers: { k: 2, s: 4, a: 2 } }
         ];
 
-        // --- STATE ---
         let state = {
             view: 'LOGIN',
             team: JSON.parse(localStorage.getItem('team_data')) || null,
@@ -122,87 +61,70 @@
             result: null,
             loginRole: 'PARTICIPANT',
             registry: [], 
-            isSyncing: false
+            isSyncing: false,
+            config: { 
+                activity1: true, 
+                activity2: false, 
+                activity3: false, 
+                activeProfiles: ["omar", "youseff", "faisal", "fahd", "ali", "hossam"] 
+            }
         };
 
-        // --- API WRAPPERS ---
         async function fetchRegistry() {
             try {
-                // simple GET
                 const res = await fetch(API_URL);
-                if (!res.ok) throw new Error('Network response was not ok');
+                if (!res.ok) throw new Error("Network error");
                 const data = await res.json();
                 state.registry = Array.isArray(data) ? data : [];
+                const cfg = state.registry.find(t => t.name === '__SESSION_CONFIG__');
+                if (cfg && cfg.completedProfiles && cfg.completedProfiles[0]) {
+                    state.config = JSON.parse(cfg.completedProfiles[0]);
+                }
                 return state.registry;
             } catch (err) {
                 console.error("Fetch Registry Error:", err);
-                return state.registry; // fallback to current registry
+                return state.registry;
             }
         }
 
-        async function pushTeamUpdate() {
-            if (!state.team || state.team.role === 'ADMIN') return;
+        async function apiCall(payload) {
             state.isSyncing = true;
             renderSyncStatus();
             try {
-                const payload = {
-                    action: 'upsert',
-                    team: {
-                        name: state.team.name,
-                        role: state.team.role,
-                        goldCoins: state.team.goldCoins,
-                        silverCoins: state.team.silverCoins,
-                        completedProfiles: state.team.completedProfiles
-                    }
-                };
-
-                // Using text/plain to avoid OPTIONS preflight request which Google Apps Script can't handle
                 const res = await fetch(API_URL, {
                     method: 'POST',
-                    mode: 'cors',
-                    cache: 'no-cache',
-                    headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
-                    },
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 });
-
-                if (!res.ok) throw new Error('POST failed');
-                
+                if (!res.ok) throw new Error("Network response not ok");
                 const result = await res.json();
                 if (result.success) {
                     state.registry = result.registry;
+                    if (state.team) {
+                        const updatedSelf = state.registry.find(t => t.name === (payload.team.newName || payload.team.name));
+                        if (updatedSelf) {
+                            state.team = updatedSelf;
+                            localStorage.setItem('team_data', JSON.stringify(state.team));
+                        }
+                    }
+                    return true;
                 }
+                return false;
             } catch (err) {
-                console.error("Push Update Error:", err);
+                console.error("API Call Error:", err);
+                return false;
             } finally {
                 state.isSyncing = false;
                 renderSyncStatus();
             }
         }
 
-        // --- CORE FUNCTIONS ---
-        function save() {
-            if (state.team) {
-                localStorage.setItem('team_data', JSON.stringify(state.team));
-                pushTeamUpdate();
-            }
+        async function pushTeamUpdate(team, action = 'upsert') {
+            return apiCall({ action, team: { name: team.name, role: team.role, goldCoins: team.goldCoins, silverCoins: team.silverCoins, completedProfiles: team.completedProfiles } });
         }
 
-        function navigate(view, data = null) {
-            state.view = view;
-            if (data) state.selectedProfile = data;
-            if (view === 'PROFILE_SELECTION') {
-                state.isSubmitted = false;
-                state.evaluations = { k: null, s: null, a: null };
-                state.result = null;
-            }
-            if (view === 'LEADERBOARD') {
-                fetchRegistry().then(() => render());
-            }
-            render();
-            window.scrollTo(0, 0);
-        }
+        function save() { if (state.team) { localStorage.setItem('team_data', JSON.stringify(state.team)); pushTeamUpdate(state.team); } }
+        function navigate(view, data = null) { state.view = view; if (data) state.selectedProfile = data; if (view === 'PROFILE_SELECTION') { state.isSubmitted = false; state.evaluations = { k: null, s: null, a: null }; state.result = null; } if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry().then(() => render()); } render(); window.scrollTo(0, 0); }
 
         function render() {
             const root = document.getElementById('root');
@@ -212,6 +134,7 @@
                 case 'PROFILE_SELECTION': root.innerHTML = renderProfileSelection(); break;
                 case 'PROFILE_EVALUATION': root.innerHTML = renderEvaluation(); break;
                 case 'LEADERBOARD': root.innerHTML = renderLeaderboard(); break;
+                case 'ADMIN_DASHBOARD': root.innerHTML = renderAdminDashboard(); break;
             }
             renderModal();
             renderSyncStatus();
@@ -220,54 +143,30 @@
         function renderSyncStatus() {
             const el = document.getElementById('sync-indicator');
             if (!el) return;
-            
-            if (state.isSyncing) {
-                el.innerHTML = `
-                    <div class="p-2 bg-amber-50 rounded-xl border border-amber-200" title="Syncing...">
-                        <svg class="w-5 h-5 text-amber-500 spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                    </div>`;
-            } else {
-                el.innerHTML = `
-                    <div class="p-2 bg-green-50 rounded-xl border border-green-200" title="All changes saved">
-                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>`;
-            }
+            el.innerHTML = state.isSyncing 
+                ? `<div class="p-2 bg-amber-50 rounded-xl border border-amber-200"><svg class="w-5 h-5 text-amber-500 spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg></div>` 
+                : `<div class="p-2 bg-green-50 rounded-xl border border-green-200"><svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>`;
         }
 
-        // --- VIEWS ---
         function renderLogin() {
-            return `
-            <div class="min-h-screen flex items-center justify-center p-6 bg-slate-900">
+            return `<div class="min-h-screen flex items-center justify-center p-6 bg-slate-900">
                 <div class="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-8 animate-pop">
                     <div class="text-center mb-8">
-                        <div class="inline-block p-6 rounded-full bg-sky-100 mb-4 text-sky-600">
-                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                        </div>
+                        <div class="inline-block p-6 rounded-full bg-sky-100 mb-4 text-sky-600"><svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg></div>
                         <h1 class="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">United Pharmacy</h1>
-                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-3">Training Evaluation Portal</p>
+                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-3">Training Portal</p>
                     </div>
                     <div class="flex p-1 bg-slate-100 rounded-2xl mb-8">
                         <button onclick="setLoginRole('PARTICIPANT')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'PARTICIPANT' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Learner</button>
                         <button onclick="setLoginRole('ADMIN')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'ADMIN' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Admin</button>
                     </div>
                     <div class="space-y-6">
-                        ${state.loginRole === 'PARTICIPANT' ? `
-                        <div>
-                            <label class="block text-[11px] font-black text-slate-400 mb-2 uppercase tracking-widest">Team Name</label>
-                            <input type="text" id="teamInput" placeholder="Enter Team Name..." class="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 outline-none font-bold text-lg transition-all">
-                        </div>
-                        ` : `
-                        <div class="bg-sky-50 p-6 rounded-3xl border border-sky-100">
-                            <p class="text-sky-700 text-sm font-bold text-center leading-relaxed">Admin access for session monitoring and leaderboard management.</p>
-                        </div>
-                        `}
-                        <button id="loginBtn" onclick="handleLogin()" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-lg">
-                            ${state.loginRole === 'ADMIN' ? 'Enter Dashboard' : 'Join Session'}
-                        </button>
+                        ${state.loginRole === 'PARTICIPANT' ? `<div><input type="text" id="teamInput" placeholder="Enter Team Name..." class="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 outline-none font-bold text-lg"></div>` : 
+                        `<div class="space-y-4">
+                            <input type="text" id="adminUser" placeholder="@username" class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
+                            <input type="password" id="adminPass" placeholder="••••••••" class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
+                        </div>`}
+                        <button id="loginBtn" onclick="handleLogin()" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-lg">Enter</button>
                     </div>
                 </div>
             </div>`;
@@ -275,173 +174,179 @@
 
         function renderLanding() {
             const isAdmin = state.team.role === 'ADMIN';
-            return `
-            <div class="min-h-screen bg-slate-50">
+            return `<div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-5 flex items-center justify-between border-b shadow-sm">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
-                        <div class="flex flex-col">
-                            <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
-                            <span class="text-[8px] font-black text-slate-400 uppercase mt-1">Status: Online</span>
-                        </div>
+                        <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
                     </div>
                     <div class="flex items-center gap-3">
                         <div id="sync-indicator"></div>
-                        <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white hover:bg-red-50 transition-colors">Logout</button>
+                        <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
                     </div>
                 </header>
                 <main class="p-6 max-w-2xl mx-auto space-y-8 animate-pop">
-                    <div class="py-4">
-                        <h1 class="text-4xl font-black text-slate-900 leading-none tracking-tight">${isAdmin ? 'Admin View' : 'Training Modules'}</h1>
-                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-3">Active Assessment Phase</p>
-                    </div>
+                    <div class="py-4"><h1 class="text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
                     <div class="grid gap-6">
-                        ${isAdmin ? '' : `
-                        <button onclick="navigate('PROFILE_SELECTION')" class="w-full bg-white border-2 border-sky-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group hover:border-sky-500 transition-all active:scale-[0.98]">
-                            <div class="bg-sky-50 p-5 rounded-[2rem] text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-all">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-2xl font-black text-slate-800 tracking-tight">Profile Evaluation</h3>
-                                <p class="text-slate-500 font-medium text-sm">Assess 6 core pharmacist profiles.</p>
-                            </div>
+                        ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group">
+                            <div class="bg-sky-600 p-5 rounded-[2rem]"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
+                        </button>` : `
+                        <button onclick="${state.config.activity1 ? "navigate('PROFILE_SELECTION')" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 1: Profiles</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
                         </button>
-                        `}
-                        
-                        <!-- Dimmed Second Activity -->
-                        <div class="w-full bg-slate-100 border-2 border-slate-200 p-8 rounded-[3rem] opacity-60 flex items-center gap-6 grayscale cursor-not-allowed relative overflow-hidden">
-                            <div class="bg-slate-200 p-5 rounded-[2rem] text-slate-400">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-2xl font-black text-slate-400 tracking-tight">Matching Activity</h3>
-                                <p class="text-slate-400 font-medium text-sm">Round 2 Activity - Locked</p>
-                                <div class="mt-4 inline-block bg-slate-200 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full">Coming Soon</div>
-                            </div>
+                        <div class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl flex items-center gap-6 ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}" onclick="${state.config.activity2 ? "alert('Activity 2 In Progress')" : "alert('Locked')" }">
+                            <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-400"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 2</h3><p class="text-slate-500 font-medium text-sm">Matching module (Placeholder).</p></div>
                         </div>
-
-                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group hover:border-sky-500 transition-all active:scale-[0.98]">
-                            <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-600 group-hover:bg-sky-600 group-hover:text-white transition-all">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-2xl font-black text-slate-800 tracking-tight">Leaderboard</h3>
-                                <p class="text-slate-500 font-medium text-sm">Real-time global team rankings.</p>
-                            </div>
+                        <div class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl flex items-center gap-6 ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}" onclick="${state.config.activity3 ? "alert('Activity 3 In Progress')" : "alert('Locked')" }">
+                            <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-400"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 3</h3><p class="text-slate-500 font-medium text-sm">Strategy module (Placeholder).</p></div>
+                        </div>
+                        `}
+                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 transition-all active:scale-[0.98]">
+                            <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-600"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
                         </button>
                     </div>
                 </main>
+            </div>`;
+        }
+
+        function renderAdminDashboard() {
+            const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
+            return `<div class="min-h-screen bg-slate-100 pb-20">
+                <header class="bg-slate-900 text-white p-6 sticky top-0 z-50 flex items-center justify-between shadow-2xl">
+                    <div class="flex items-center gap-4">
+                        <button onclick="navigate('LANDING')" class="p-2 hover:bg-slate-800 rounded-full transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <h1 class="font-black text-xl tracking-tighter uppercase">Admin Panel</h1>
+                    </div>
+                    <div id="sync-indicator"></div>
+                </header>
+                <div class="max-w-7xl mx-auto p-6 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl space-y-6">
+                            <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Global Session Controls</h3>
+                            <div class="space-y-3">
+                                <button onclick="toggleSessionConfig('activity1')" class="w-full flex items-center justify-between p-4 rounded-2xl border-2 ${state.config.activity1 ? 'bg-sky-50 border-sky-500' : 'bg-slate-50'}">
+                                    <span class="font-black text-sm uppercase">Activity 1</span>
+                                    <div class="w-10 h-5 bg-slate-200 rounded-full relative"><div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all ${state.config.activity1 ? 'translate-x-5 bg-sky-600' : ''}"></div></div>
+                                </button>
+                                <button onclick="toggleSessionConfig('activity2')" class="w-full flex items-center justify-between p-4 rounded-2xl border-2 ${state.config.activity2 ? 'bg-sky-50 border-sky-500' : 'bg-slate-50'}">
+                                    <span class="font-black text-sm uppercase">Activity 2</span>
+                                    <div class="w-10 h-5 bg-slate-200 rounded-full relative"><div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all ${state.config.activity2 ? 'translate-x-5 bg-sky-600' : ''}"></div></div>
+                                </button>
+                                <button onclick="toggleSessionConfig('activity3')" class="w-full flex items-center justify-between p-4 rounded-2xl border-2 ${state.config.activity3 ? 'bg-sky-50 border-sky-500' : 'bg-slate-50'}">
+                                    <span class="font-black text-sm uppercase">Activity 3</span>
+                                    <div class="w-10 h-5 bg-slate-200 rounded-full relative"><div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all ${state.config.activity3 ? 'translate-x-5 bg-sky-600' : ''}"></div></div>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl space-y-6">
+                            <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Available Profiles</h3>
+                            <div class="grid grid-cols-3 gap-2">
+                                ${PROFILES.map(p => `<button onclick="toggleProfileStatus('${p.id}')" class="p-3 rounded-xl border-2 text-[10px] font-black uppercase ${state.config.activeProfiles.includes(p.id) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}">${p.name.split(' ')[0]}</button>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
+                        <div class="p-8 border-b flex items-center justify-between bg-slate-50/50">
+                            <h3 class="font-black text-slate-800 uppercase text-sm tracking-tight">Manage Teams (${teams.length})</h3>
+                            <button onclick="adminAddTeam()" class="bg-slate-900 text-white px-6 py-2 rounded-xl font-black text-xs uppercase">New Team</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 border-b">
+                                    <tr><th class="p-6 text-[10px] font-black uppercase text-slate-400">Team</th><th class="p-6 text-[10px] font-black uppercase text-slate-400">Progress (K/S/A)</th><th class="p-6 text-[10px] font-black uppercase text-slate-400">Coins</th><th class="p-6 text-[10px] font-black uppercase text-slate-400 text-right">Actions</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${teams.map(t => {
+                                        const profiles = Array.isArray(t.completedProfiles) ? t.completedProfiles : [];
+                                        return `<tr class="hover:bg-slate-50/80 transition-colors">
+                                            <td class="p-6 font-black text-slate-800">${t.name}</td>
+                                            <td class="p-6">
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    ${profiles.length > 0 ? profiles.map(p => {
+                                                        const id = typeof p === 'string' ? p : p.id;
+                                                        const scores = typeof p === 'object' ? `<span class="opacity-40 ml-1 text-[7px]">${p.k}/${p.s}/${p.a}</span>` : '';
+                                                        return `<span class="bg-sky-50 text-sky-700 text-[8px] font-black uppercase px-2 py-1 rounded-lg border border-sky-100">${id}${scores}</span>`
+                                                    }).join('') : '<span class="text-slate-300 text-[10px] italic">No progress</span>'}
+                                                </div>
+                                            </td>
+                                            <td class="p-6">
+                                                <div class="flex gap-4">
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">GOLD</span><span class="font-black text-yellow-600">${t.goldCoins}</span></div>
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-slate-400">SILVER</span><span class="font-black text-slate-400">${t.silverCoins}</span></div>
+                                                </div>
+                                            </td>
+                                            <td class="p-6 text-right space-x-2">
+                                                <button onclick="adminEditTeam('${t.name}')" class="text-sky-600 p-2 hover:bg-sky-50 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                                                <button onclick="adminDeleteTeam('${t.name}')" class="text-red-600 p-2 hover:bg-red-50 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                            </td>
+                                        </tr>`}).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>`;
         }
 
         function renderProfileSelection() {
             const completed = state.team.completedProfiles || [];
-            return `
-            <div class="min-h-screen bg-slate-50 pb-28">
+            return `<div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
-                    <div class="flex items-center gap-2">
-                        <button onclick="navigate('LANDING')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                        <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Profiles</h1>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div id="sync-indicator"></div>
-                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2.5 rounded-2xl shadow-lg active:scale-90">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                        </button>
-                    </div>
+                    <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Profile</h1>
+                    <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                 </header>
                 <main class="p-6 grid grid-cols-2 gap-4 max-w-xl mx-auto">
                     ${PROFILES.map(p => {
-                        const isDone = completed.includes(p.id);
-                        return `
-                        <div onclick="navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})" 
-                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all active:scale-95 text-center flex flex-col items-center gap-3 cursor-pointer ${isDone ? 'border-green-400 bg-green-50/50' : 'border-white hover:border-sky-300'}">
+                        const isDone = completed.some(c => (typeof c === 'string' ? c === p.id : c.id === p.id));
+                        const isLocked = !state.config.activeProfiles.includes(p.id);
+                        return `<div onclick="${isLocked ? '' : `navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
+                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
                             <div class="relative">
-                                <img src="${p.avatar}" alt="${p.name}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&bold=true'">
-                                ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 border-white shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ''}
+                                <img src="${p.avatar}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&bold=true'">
+                                ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>' : ''}
+                                ${isLocked ? '<div class="absolute inset-0 flex items-center justify-center text-slate-400"><svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg></div>' : ''}
                             </div>
-                            <div class="space-y-0.5">
-                                <h4 class="font-black text-slate-800 text-sm tracking-tight">${p.name}</h4>
-                                <p class="text-[9px] uppercase font-bold text-slate-400 tracking-widest">${p.job}</p>
-                            </div>
+                            <div class="mt-3"><h4 class="font-black text-slate-800 text-sm tracking-tight">${isLocked ? 'Locked' : p.name}</h4></div>
                         </div>`;
                     }).join('')}
                 </main>
-                <div class="fixed bottom-6 left-6 right-6 bg-slate-900 text-white p-5 rounded-[2.5rem] shadow-2xl flex justify-between items-center glass border border-white/10">
-                    <div class="flex gap-4">
-                        <div class="flex items-center gap-1.5"><span class="text-2xl">🏆</span><span class="font-black text-xl">${state.team.goldCoins}</span></div>
-                        <div class="flex items-center gap-1.5"><span class="text-2xl">🥈</span><span class="font-black text-xl">${state.team.silverCoins}</span></div>
-                    </div>
-                    <div class="text-[10px] font-black uppercase opacity-60 tracking-widest">${completed.length} / ${PROFILES.length} Completed</div>
-                </div>
             </div>`;
         }
 
         function renderEvaluation() {
             const p = state.selectedProfile;
-            return `
-            <div class="min-h-screen bg-slate-50 pb-32">
+            return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
-                    <div class="flex items-center gap-2">
-                        <button onclick="navigate('PROFILE_SELECTION')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                        <button onclick="toggleRubric()" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-tighter shadow-md active:scale-95">View Rubric</button>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div id="sync-indicator"></div>
-                        <div class="flex gap-1.5">
-                            <div class="bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200 font-black text-yellow-700 text-xs">${state.team.goldCoins}G</div>
-                            <div class="bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 font-black text-slate-400 text-xs">${state.team.silverCoins}S</div>
-                        </div>
+                    <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <button onclick="toggleRubric()" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
+                    <div class="flex gap-2">
+                        <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs">${state.team.goldCoins}G</div>
+                        <div class="bg-slate-50 px-3 py-1 rounded-xl border font-black text-slate-400 text-xs">${state.team.silverCoins}S</div>
                     </div>
                 </header>
                 <main class="p-5 max-w-xl mx-auto space-y-8 animate-pop">
-                    <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
+                    <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
                         <div class="bg-slate-800 text-white py-6 text-center font-black text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
-                            <div class="flex justify-center relative">
-                                <div class="absolute inset-0 bg-sky-500/10 blur-3xl rounded-full scale-50"></div>
-                                <img src="${p.avatar}" class="relative w-44 h-44 rounded-full border-[12px] border-white shadow-2xl bg-slate-50" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&size=256&bold=true'">
-                            </div>
-                            <div class="grid grid-cols-3 gap-3">
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Age</p><p class="text-xs font-black text-slate-700">${p.age}</p></div>
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Exp</p><p class="text-xs font-black text-slate-700">${p.exp}</p></div>
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Role</p><p class="text-[10px] font-black text-slate-700 leading-none mt-1">${p.job}</p></div>
-                            </div>
+                            <div class="flex justify-center"><img src="${p.avatar}" class="w-44 h-44 rounded-full border-[12px] border-white shadow-2xl bg-slate-50" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&size=256&bold=true'"></div>
                             <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
-                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600 leading-relaxed"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
+                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
                             </div>
                         </div>
                     </div>
-
-                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl border border-slate-100 space-y-8">
-                        <div class="text-center">
-                            <h3 class="font-black uppercase tracking-[0.2em] text-slate-400 text-[10px]">Scoring Rubric</h3>
-                        </div>
-                        
-                        ${['k', 's', 'a'].map(cat => `
-                            <div class="space-y-4">
-                                <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-[0.2em]">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
-                                <div class="flex justify-between gap-2.5">
-                                    ${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="flex-1 h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                        
-                        <div class="pt-4">
-                            ${state.isSubmitted 
-                                ? `<button onclick="navigate('PROFILE_SELECTION')" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Back to List</button>`
-                                : `<button onclick="handleSubmitEvaluation()" class="w-full py-5 bg-red-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Submit Review</button>`
-                            }
-                        </div>
+                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl space-y-8">
+                        ${['k', 's', 'a'].map(cat => `<div class="space-y-4">
+                            <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
+                            <div class="flex justify-between gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="flex-1 h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
+                        </div>`).join('')}
+                        <button onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg">${state.isSubmitted ? 'Back to List' : 'Submit Review'}</button>
                     </div>
-
-                    ${state.result ? `
-                        <div class="p-10 rounded-[3rem] bg-white border-4 ${state.result.type === 'gold' ? 'border-yellow-400' : state.result.type === 'silver' ? 'border-slate-300' : 'border-red-400'} text-center animate-pop shadow-2xl">
-                            <div class="text-7xl mb-6 coin-bounce">${state.result.type === 'gold' ? '🏆' : state.result.type === 'silver' ? '🥈' : '💡'}</div>
-                            <h4 class="text-3xl font-black uppercase text-slate-800 tracking-tight">${state.result.type === 'gold' ? 'Perfect!' : 'Result'}</h4>
-                            <p class="text-slate-500 font-bold mt-2 leading-relaxed">${state.result.msg}</p>
-                        </div>
-                    ` : ''}
                 </main>
             </div>`;
         }
@@ -452,7 +357,7 @@
             if (state.isSubmitted) {
                 if (val === correctVal) return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 scale-105 shadow-inner ring-4 ring-green-50";
                 if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
-                return "bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed border border-slate-100";
+                return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100";
             }
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
             return "bg-white text-slate-500 border border-slate-200 active:bg-sky-50";
@@ -460,45 +365,24 @@
 
         function renderLeaderboard() {
             const participants = state.registry.filter(t => t.role === 'PARTICIPANT');
-            const rankings = participants.sort((a, b) => {
-                if (b.goldCoins !== a.goldCoins) return b.goldCoins - a.goldCoins;
-                return b.silverCoins - a.silverCoins;
-            }).map((t, idx) => ({ ...t, rank: idx + 1, you: state.team && t.name === state.team.name }));
-
-            return `
-            <div class="min-h-screen bg-slate-900 text-white pb-20">
-                <header class="p-5 flex items-center justify-between border-b border-slate-800">
-                    <button onclick="navigate('LANDING')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+            const rankings = participants.sort((a, b) => b.goldCoins - a.goldCoins || b.silverCoins - a.silverCoins).map((t, idx) => ({ ...t, rank: idx + 1, you: state.team && t.name === state.team.name }));
+            return `<div class="min-h-screen bg-slate-900 text-white pb-20">
+                <header class="p-4 flex items-center justify-between border-b border-slate-800">
+                    <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-[0.3em] text-[10px] text-slate-500">Live Ranking</h1>
                     <div id="sync-indicator"></div>
                 </header>
                 <main class="p-6 max-w-xl mx-auto space-y-6">
-                    <div class="text-center py-12 relative overflow-hidden">
-                        <div class="absolute inset-0 bg-sky-600/10 blur-[100px] rounded-full"></div>
-                        <div class="text-7xl mb-4 coin-bounce">👑</div>
-                        <h2 class="text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2>
-                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-3 tracking-widest">Global Standings</p>
-                    </div>
+                    <div class="text-center py-12"><div class="text-7xl mb-4 coin-bounce">👑</div><h2 class="text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2></div>
                     <div class="space-y-4">
-                        ${rankings.length === 0 ? `
-                            <div class="text-center py-12 bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-700">
-                                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Waiting for teams...</p>
-                            </div>
-                        ` : rankings.map(r => `
-                            <div class="flex items-center gap-5 p-6 rounded-[2.5rem] border-2 transition-all ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl scale-[1.05] z-10' : 'bg-slate-800/40 border-slate-700'}">
-                                <div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : r.rank === 2 ? 'bg-slate-300 text-slate-800' : 'bg-slate-700 text-slate-400'}">
-                                    ${r.rank}
-                                </div>
-                                <div class="flex-1 font-black text-xl tracking-tight leading-none">
-                                    ${r.name}
-                                    ${r.you ? '<br><span class="text-[9px] uppercase opacity-60">My Team</span>' : ''}
-                                </div>
+                        ${rankings.map(r => `<div class="flex items-center gap-5 p-6 rounded-[2.5rem] border-2 ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl' : 'bg-slate-800/40 border-slate-700'}">
+                                <div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : 'bg-slate-700 text-slate-400'}">${r.rank}</div>
+                                <div class="flex-1 font-black text-xl tracking-tight">${r.name}${r.you ? ' (YOU)' : ''}</div>
                                 <div class="flex gap-4">
                                     <div class="text-center"><p class="text-[9px] font-black uppercase opacity-40">G</p><p class="font-black text-yellow-400 text-lg">${r.goldCoins}</p></div>
                                     <div class="text-center"><p class="text-[9px] font-black uppercase opacity-40">S</p><p class="font-black text-slate-300 text-lg">${r.silverCoins}</p></div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            </div>`).join('')}
                     </div>
                 </main>
             </div>`;
@@ -508,107 +392,85 @@
             const container = document.getElementById('modal-container');
             if (!state.isRubricOpen) { container.classList.add('hidden'); return; }
             container.classList.remove('hidden');
-            container.innerHTML = `
-                <div class="bg-white rounded-[3rem] w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
-                    <div class="p-8 border-b flex justify-between items-center bg-slate-50">
-                        <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2>
-                        <button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                    </div>
-                    <div class="p-6 overflow-y-auto space-y-8 scroll-smooth">
-                        ${RUBRIC_DATA.map(c => `
-                            <div class="space-y-4">
-                                <h3 class="text-sky-600 font-black uppercase text-xs tracking-[0.2em] flex items-center gap-2"><span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>${c.name}</h3>
-                                <div class="grid gap-2.5">
-                                    ${[1, 2, 3, 4, 5].map(s => `
-                                        <div class="flex items-start gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100">
-                                            <div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">${s}</div>
-                                            <p class="text-xs font-semibold text-slate-600 leading-relaxed">${c.levels[s]}</p>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
+            container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
+                    <div class="p-8 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2><button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+                    <div class="p-6 overflow-y-auto space-y-8">${RUBRIC_DATA.map(c => `<div class="space-y-4"><h3 class="text-sky-600 font-black uppercase text-xs flex items-center gap-2"><span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>${c.name}</h3><div class="grid gap-2.5">${[1, 2, 3, 4, 5].map(s => `<div class="flex items-start gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100"><div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">${s}</div><p class="text-xs font-semibold text-slate-600 leading-relaxed">${c.levels[s]}</p></div>`).join('')}</div></div>`).join('')}</div>
                     <div class="p-8 border-t bg-slate-50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
-                </div>
-            `;
+                </div>`;
         }
 
-        // --- HANDLERS ---
         window.setLoginRole = (role) => { state.loginRole = role; render(); };
-
         window.handleLogin = async () => {
             if (state.loginRole === 'ADMIN') {
-                state.team = { name: "Administrator", role: 'ADMIN', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
-                save();
-                navigate('LANDING');
+                const user = document.getElementById('adminUser').value;
+                const pass = document.getElementById('adminPass').value;
+                if (user === '@unitedadmin' && pass === '#uniTed25') {
+                    state.team = { name: "Administrator", role: 'ADMIN', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
+                    navigate('LANDING');
+                } else alert("Invalid Admin Credentials.");
                 return;
             }
-
             const name = document.getElementById('teamInput').value.trim();
-            if (!name) return alert("Please enter your Team Name to join.");
-            
+            if (!name) return alert("Enter Team Name.");
             const btn = document.getElementById('loginBtn');
-            const originalBtnText = btn.innerHTML;
-            btn.innerHTML = "Joining Cloud...";
-            btn.disabled = true;
-
+            btn.innerHTML = "Syncing..."; btn.disabled = true;
             try {
-                const registry = await fetchRegistry();
-                const existing = registry.find(t => t.name.toLowerCase() === name.toLowerCase());
-                state.team = existing ? existing : { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
-                save(); // This also pushes update to cloud
-                navigate('LANDING');
+                const reg = await fetchRegistry();
+                const existing = reg.find(t => t.name.toLowerCase() === name.toLowerCase());
+                state.team = existing || { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
+                save(); navigate('LANDING');
             } catch (err) {
-                alert("Cloud connection failed. Using local session.");
-                state.team = { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
-                save();
-                navigate('LANDING');
-            } finally {
-                btn.innerHTML = originalBtnText;
-                btn.disabled = false;
+                alert("Cloud connection failed. Check your internet or API settings.");
+                btn.innerHTML = "Enter"; btn.disabled = false;
             }
         };
 
-        window.handleLogout = () => {
-            if (!confirm("Your progress is saved to the cloud. Logout now?")) return;
-            localStorage.removeItem('team_data');
-            state.team = null;
-            navigate('LOGIN');
-        };
-
+        window.handleLogout = () => { localStorage.removeItem('team_data'); state.team = null; navigate('LOGIN'); };
         window.handleScore = (cat, val) => { if (state.isSubmitted) return; state.evaluations[cat] = val; render(); };
         window.toggleRubric = () => { state.isRubricOpen = !state.isRubricOpen; render(); };
-
         window.handleSubmitEvaluation = () => {
             const { k, s, a } = state.evaluations;
-            if (k === null || s === null || a === null) return alert("Please score all 3 categories.");
-
+            if (k === null || s === null || a === null) return alert("Score all 3.");
             const p = state.selectedProfile;
             const correctCount = [k === p.answers.k, s === p.answers.s, a === p.answers.a].filter(Boolean).length;
-
-            let gold = 0, silver = 0;
-            if (correctCount === 3) { gold = 1; state.result = { type: 'gold', msg: "Flawless assessment! Gold coin earned." }; }
-            else if (correctCount >= 1) { silver = 1; state.result = { type: 'silver', msg: `Strong analysis. ${correctCount}/3 correct. Silver coin earned.` }; }
-            else { state.result = { type: 'fail', msg: "Rubric mismatch. Keep practicing!" }; }
-
-            state.team.goldCoins += gold;
-            state.team.silverCoins += silver;
-            if (!state.team.completedProfiles.includes(p.id)) state.team.completedProfiles.push(p.id);
-
+            
+            state.team.goldCoins += (correctCount === 3 ? 1 : 0);
+            state.team.silverCoins += (correctCount >= 1 && correctCount < 3 ? 1 : 0);
+            
+            const sub = { id: p.id, k, s, a };
+            if (!state.team.completedProfiles.some(cp => (typeof cp === 'string' ? cp === p.id : cp.id === p.id))) {
+                state.team.completedProfiles.push(sub);
+            }
+            
             state.isSubmitted = true;
-            save(); // Cloud sync
-            render();
-            setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+            state.result = correctCount === 3 ? { type: 'gold', msg: "Perfect!" } : { type: 'silver', msg: `${correctCount}/3 Correct.` };
+            save(); render();
         };
 
-        // --- INITIALIZATION ---
-        if (state.team) {
-            navigate('LANDING');
-            fetchRegistry(); // Silent background sync
-        } else {
-            navigate('LOGIN');
-        }
+        window.toggleSessionConfig = (key) => { state.config[key] = !state.config[key]; pushSessionConfig(); render(); };
+        window.toggleProfileStatus = (pid) => {
+            const index = state.config.activeProfiles.indexOf(pid);
+            if (index === -1) state.config.activeProfiles.push(pid); else state.config.activeProfiles.splice(index, 1);
+            pushSessionConfig(); render();
+        };
+        async function pushSessionConfig() { await apiCall({ action: 'upsert', team: { name: '__SESSION_CONFIG__', role: 'SYSTEM', goldCoins: 0, silverCoins: 0, completedProfiles: [JSON.stringify(state.config)] } }); }
+        
+        window.adminAddTeam = async () => {
+            const name = prompt("Enter new Team Name:"); if (!name) return;
+            const newTeam = { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
+            if (await pushTeamUpdate(newTeam)) fetchRegistry().then(() => render());
+        };
+        window.adminEditTeam = async (oldName) => {
+            const newName = prompt("Enter new name for " + oldName, oldName);
+            if (!newName || newName === oldName) return;
+            if (await apiCall({ action: 'rename', team: { name: oldName, newName: newName } })) fetchRegistry().then(() => render());
+        };
+        window.adminDeleteTeam = async (name) => {
+            if (!confirm(`Permanently delete team "${name}"?`)) return;
+            if (await apiCall({ action: 'delete', team: { name: name } })) fetchRegistry().then(() => render());
+        };
+
+        if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');
     </script>
 <script type="module" src="/index.tsx"></script>
 </body>
