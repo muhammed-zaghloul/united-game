@@ -35,7 +35,15 @@
             50% { transform: translateY(-10px); }
         }
 
-        /* Hide scrollbars for a cleaner mobile look */
+        .spin-slow {
+            animation: spin 3s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hide scrollbars */
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -56,20 +64,51 @@
     <div id="modal-container" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"></div>
 
     <script>
+        // --- API CONFIG ---
+        // Using the user-provided Apps Script URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbwg8jH4oJFfNodVkhAfRjzWE2cczw1_OIBcFJBgcXAeuHuvKZBpn7UCKsZlHKrGTZ2d/exec";
+
         // --- DATA & CONSTANTS ---
         const RUBRIC_DATA = [
-            { name: "Knowledge", levels: { 1: "Poor", 2: "Below Expectation", 3: "Average/ Meeting Expectation", 4: "Exceeding expectation", 5: "Exceptional" } },
-            { name: "Skills", levels: { 1: "Lack core skills required to do his job", 2: "Have core skills, needs development under supervision", 3: "Have core skills with minimal support", 4: "Mentoring ability or works independently", 5: "Mentoring ability AND works independently" } },
-            { name: "Attitude", levels: { 1: "Unprofessional/Manipulative", 2: "Inconsistent behavior", 3: "Generally follows guidelines", 4: "Proactive/Agile", 5: "Exceptional role model" } }
+            { 
+                name: "Knowledge", 
+                levels: { 
+                    1: "Poor", 
+                    2: "Below Expectation", 
+                    3: "Average/ Meeting Expectation", 
+                    4: "Exceeding expectation", 
+                    5: "Exceptional" 
+                } 
+            },
+            { 
+                name: "Skills", 
+                levels: { 
+                    1: "Lack core skills required to do his job", 
+                    2: "Have core skills, needs development under supervision", 
+                    3: "Have core skills with minimal support", 
+                    4: "Mentoring ability or works independently", 
+                    5: "Mentoring ability AND works independently" 
+                } 
+            },
+            { 
+                name: "Attitude", 
+                levels: { 
+                    1: "Consistently displays unprofessional behavior and frequently resists, manipulates and breaks the rules", 
+                    2: "Occasionally shows acceptable behavior but is inconsistent.", 
+                    3: "Generally, behaves appropriately and follows guidelines.", 
+                    4: "Proactive, and has distinguished behavior that give him edge over others, e.g., highly agile or accept and look for feedback", 
+                    5: "Proactive role Model, Always models exceptional behavior and professionalism and fosters positive culture" 
+                } 
+            }
         ];
 
         const PROFILES = [
-            { id: "omar", name: "Omar", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure well", "Highly agile", "Seeks feedback"], answers: { k: 4, s: 3, a: 4 } },
-            { id: "youseff", name: "Youseff", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Consistently follows guidelines", "Maintains average targets"], answers: { k: 4, s: 3, a: 3 } },
-            { id: "faisal", name: "Faisal", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors junior staff", "Proactive flow improvement"], answers: { k: 3, s: 4, a: 4 } },
-            { id: "fahd", name: "Fahd", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling skills"], answers: { k: 4, s: 1, a: 2 } },
-            { id: "ali", name: "Ali", avatar: "ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: ["Inventory expert", "Fast dispensing", "Resists management"], answers: { k: 3, s: 4, a: 1 } },
-            { id: "hossam", name: "Hossam", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Exceptional sales skills", "Efficient cross-selling", "Inconsistent safety adherence"], answers: { k: 2, s: 4, a: 2 } }
+            { id: "omar", name: "Omar Khalid", avatar: "omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: ["Technical expert", "Handles pressure well", "Highly agile", "Seeks feedback"], answers: { k: 4, s: 3, a: 4 } },
+            { id: "youseff", name: "Youseff Ahmad", avatar: "youseff-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: ["Reliable competency", "Consistently follows guidelines", "Maintains average targets"], answers: { k: 4, s: 3, a: 3 } },
+            { id: "faisal", name: "Faisal Bin Saud", avatar: "faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: ["Independent worker", "Mentors junior staff", "Proactive flow improvement"], answers: { k: 3, s: 4, a: 4 } },
+            { id: "fahd", name: "Fahd Grey", avatar: "fahd-avatar.png", job: "Pharmacist", age: 23, exp: "9 Months", traits: ["Eager to learn", "High tech score", "Struggles with selling skills"], answers: { k: 4, s: 1, a: 2 } },
+            { id: "ali", name: "Ali Mansour", avatar: "ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: ["Inventory expert", "Fast dispensing", "Resists management"], answers: { k: 3, s: 4, a: 1 } },
+            { id: "hossam", name: "Hossam Hassan", avatar: "hossam-avatar.png", job: "Pharmacist", age: 24, exp: "1 Year", traits: ["Exceptional sales skills", "Efficient cross-selling", "Inconsistent safety adherence"], answers: { k: 2, s: 4, a: 2 } }
         ];
 
         // --- STATE ---
@@ -81,22 +120,72 @@
             evaluations: { k: null, s: null, a: null },
             isSubmitted: false,
             result: null,
-            loginRole: 'PARTICIPANT' // Default login toggle role
+            loginRole: 'PARTICIPANT',
+            registry: [], 
+            isSyncing: false
         };
+
+        // --- API WRAPPERS ---
+        async function fetchRegistry() {
+            try {
+                // simple GET
+                const res = await fetch(API_URL);
+                if (!res.ok) throw new Error('Network response was not ok');
+                const data = await res.json();
+                state.registry = Array.isArray(data) ? data : [];
+                return state.registry;
+            } catch (err) {
+                console.error("Fetch Registry Error:", err);
+                return state.registry; // fallback to current registry
+            }
+        }
+
+        async function pushTeamUpdate() {
+            if (!state.team || state.team.role === 'ADMIN') return;
+            state.isSyncing = true;
+            renderSyncStatus();
+            try {
+                const payload = {
+                    action: 'upsert',
+                    team: {
+                        name: state.team.name,
+                        role: state.team.role,
+                        goldCoins: state.team.goldCoins,
+                        silverCoins: state.team.silverCoins,
+                        completedProfiles: state.team.completedProfiles
+                    }
+                };
+
+                // Using text/plain to avoid OPTIONS preflight request which Google Apps Script can't handle
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) throw new Error('POST failed');
+                
+                const result = await res.json();
+                if (result.success) {
+                    state.registry = result.registry;
+                }
+            } catch (err) {
+                console.error("Push Update Error:", err);
+            } finally {
+                state.isSyncing = false;
+                renderSyncStatus();
+            }
+        }
 
         // --- CORE FUNCTIONS ---
         function save() {
             if (state.team) {
                 localStorage.setItem('team_data', JSON.stringify(state.team));
-                // Update registry
-                const registry = JSON.parse(localStorage.getItem('teams_registry')) || [];
-                const index = registry.findIndex(t => t.name === state.team.name);
-                if (index !== -1) {
-                    registry[index] = state.team;
-                } else {
-                    registry.push(state.team);
-                }
-                localStorage.setItem('teams_registry', JSON.stringify(registry));
+                pushTeamUpdate();
             }
         }
 
@@ -108,13 +197,15 @@
                 state.evaluations = { k: null, s: null, a: null };
                 state.result = null;
             }
+            if (view === 'LEADERBOARD') {
+                fetchRegistry().then(() => render());
+            }
             render();
             window.scrollTo(0, 0);
         }
 
         function render() {
             const root = document.getElementById('root');
-            
             switch(state.view) {
                 case 'LOGIN': root.innerHTML = renderLogin(); break;
                 case 'LANDING': root.innerHTML = renderLanding(); break;
@@ -123,6 +214,28 @@
                 case 'LEADERBOARD': root.innerHTML = renderLeaderboard(); break;
             }
             renderModal();
+            renderSyncStatus();
+        }
+
+        function renderSyncStatus() {
+            const el = document.getElementById('sync-indicator');
+            if (!el) return;
+            
+            if (state.isSyncing) {
+                el.innerHTML = `
+                    <div class="p-2 bg-amber-50 rounded-xl border border-amber-200" title="Syncing...">
+                        <svg class="w-5 h-5 text-amber-500 spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>`;
+            } else {
+                el.innerHTML = `
+                    <div class="p-2 bg-green-50 rounded-xl border border-green-200" title="All changes saved">
+                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>`;
+            }
         }
 
         // --- VIEWS ---
@@ -137,12 +250,10 @@
                         <h1 class="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">United Pharmacy</h1>
                         <p class="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-3">Training Evaluation Portal</p>
                     </div>
-
                     <div class="flex p-1 bg-slate-100 rounded-2xl mb-8">
                         <button onclick="setLoginRole('PARTICIPANT')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'PARTICIPANT' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Learner</button>
                         <button onclick="setLoginRole('ADMIN')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'ADMIN' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Admin</button>
                     </div>
-
                     <div class="space-y-6">
                         ${state.loginRole === 'PARTICIPANT' ? `
                         <div>
@@ -151,10 +262,10 @@
                         </div>
                         ` : `
                         <div class="bg-sky-50 p-6 rounded-3xl border border-sky-100">
-                            <p class="text-sky-700 text-sm font-bold text-center leading-relaxed">Admin access allows you to view all participant progress and leaderboards.</p>
+                            <p class="text-sky-700 text-sm font-bold text-center leading-relaxed">Admin access for session monitoring and leaderboard management.</p>
                         </div>
                         `}
-                        <button onclick="handleLogin()" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-lg">
+                        <button id="loginBtn" onclick="handleLogin()" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-lg">
                             ${state.loginRole === 'ADMIN' ? 'Enter Dashboard' : 'Join Session'}
                         </button>
                     </div>
@@ -168,18 +279,21 @@
             <div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-5 flex items-center justify-between border-b shadow-sm">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black">${state.team.name[0].toUpperCase()}</div>
-                        <div>
+                        <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
+                        <div class="flex flex-col">
                             <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
-                            <p class="text-[9px] font-bold text-slate-400 uppercase mt-1 tracking-tighter">${state.team.role}</p>
+                            <span class="text-[8px] font-black text-slate-400 uppercase mt-1">Status: Online</span>
                         </div>
                     </div>
-                    <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full">Logout</button>
+                    <div class="flex items-center gap-3">
+                        <div id="sync-indicator"></div>
+                        <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white hover:bg-red-50 transition-colors">Logout</button>
+                    </div>
                 </header>
-                <main class="p-6 max-w-2xl mx-auto space-y-8">
+                <main class="p-6 max-w-2xl mx-auto space-y-8 animate-pop">
                     <div class="py-4">
-                        <h1 class="text-4xl font-black text-slate-900 leading-none tracking-tight">${isAdmin ? 'Admin Panel' : 'Training Modules'}</h1>
-                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-3">Select Active View</p>
+                        <h1 class="text-4xl font-black text-slate-900 leading-none tracking-tight">${isAdmin ? 'Admin View' : 'Training Modules'}</h1>
+                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.2em] mt-3">Active Assessment Phase</p>
                     </div>
                     <div class="grid gap-6">
                         ${isAdmin ? '' : `
@@ -189,18 +303,30 @@
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-2xl font-black text-slate-800 tracking-tight">Profile Evaluation</h3>
-                                <p class="text-slate-500 font-medium text-sm">Review 6 core pharmacist profiles.</p>
-                                <div class="mt-4 inline-block bg-green-100 text-green-700 text-[10px] font-black uppercase px-3 py-1 rounded-full">Available</div>
+                                <p class="text-slate-500 font-medium text-sm">Assess 6 core pharmacist profiles.</p>
                             </div>
                         </button>
                         `}
+                        
+                        <!-- Dimmed Second Activity -->
+                        <div class="w-full bg-slate-100 border-2 border-slate-200 p-8 rounded-[3rem] opacity-60 flex items-center gap-6 grayscale cursor-not-allowed relative overflow-hidden">
+                            <div class="bg-slate-200 p-5 rounded-[2rem] text-slate-400">
+                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-2xl font-black text-slate-400 tracking-tight">Matching Activity</h3>
+                                <p class="text-slate-400 font-medium text-sm">Round 2 Activity - Locked</p>
+                                <div class="mt-4 inline-block bg-slate-200 text-slate-500 text-[10px] font-black uppercase px-3 py-1 rounded-full">Coming Soon</div>
+                            </div>
+                        </div>
+
                         <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group hover:border-sky-500 transition-all active:scale-[0.98]">
                             <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-600 group-hover:bg-sky-600 group-hover:text-white transition-all">
                                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
                             </div>
                             <div class="flex-1">
                                 <h3 class="text-2xl font-black text-slate-800 tracking-tight">Leaderboard</h3>
-                                <p class="text-slate-500 font-medium text-sm">View real-time participant rankings.</p>
+                                <p class="text-slate-500 font-medium text-sm">Real-time global team rankings.</p>
                             </div>
                         </button>
                     </div>
@@ -213,18 +339,23 @@
             return `
             <div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
-                    <button onclick="navigate('LANDING')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Participant</h1>
-                    <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2.5 rounded-2xl shadow-lg shadow-sky-200 active:scale-90">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigate('LANDING')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Profiles</h1>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div id="sync-indicator"></div>
+                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2.5 rounded-2xl shadow-lg active:scale-90">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </button>
+                    </div>
                 </header>
                 <main class="p-6 grid grid-cols-2 gap-4 max-w-xl mx-auto">
                     ${PROFILES.map(p => {
                         const isDone = completed.includes(p.id);
                         return `
                         <div onclick="navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})" 
-                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all active:scale-95 text-center flex flex-col items-center gap-3 cursor-pointer ${isDone ? 'border-green-400 bg-green-50/50' : 'border-white hover:border-sky-200'}">
+                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all active:scale-95 text-center flex flex-col items-center gap-3 cursor-pointer ${isDone ? 'border-green-400 bg-green-50/50' : 'border-white hover:border-sky-300'}">
                             <div class="relative">
                                 <img src="${p.avatar}" alt="${p.name}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-slate-100" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&bold=true'">
                                 ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 border-white shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg></div>' : ''}
@@ -251,11 +382,16 @@
             return `
             <div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
-                    <button onclick="navigate('PROFILE_SELECTION')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <button onclick="toggleRubric()" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-tighter shadow-md active:scale-95">View Rubric</button>
-                    <div class="flex gap-1.5">
-                        <div class="bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200 font-black text-yellow-700 text-xs">${state.team.goldCoins}G</div>
-                        <div class="bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 font-black text-slate-400 text-xs">${state.team.silverCoins}S</div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigate('PROFILE_SELECTION')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <button onclick="toggleRubric()" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-tighter shadow-md active:scale-95">View Rubric</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div id="sync-indicator"></div>
+                        <div class="flex gap-1.5">
+                            <div class="bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200 font-black text-yellow-700 text-xs">${state.team.goldCoins}G</div>
+                            <div class="bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 font-black text-slate-400 text-xs">${state.team.silverCoins}S</div>
+                        </div>
                     </div>
                 </header>
                 <main class="p-5 max-w-xl mx-auto space-y-8 animate-pop">
@@ -263,29 +399,28 @@
                         <div class="bg-slate-800 text-white py-6 text-center font-black text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
                             <div class="flex justify-center relative">
-                                <div class="absolute inset-0 bg-sky-500/10 blur-[60px] rounded-full scale-50"></div>
+                                <div class="absolute inset-0 bg-sky-500/10 blur-3xl rounded-full scale-50"></div>
                                 <img src="${p.avatar}" class="relative w-44 h-44 rounded-full border-[12px] border-white shadow-2xl bg-slate-50" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&size=256&bold=true'">
                             </div>
                             <div class="grid grid-cols-3 gap-3">
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Age</p><p class="text-xs font-black text-slate-700">${p.age}</p></div>
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Exp</p><p class="text-xs font-black text-slate-700">${p.exp}</p></div>
-                                <div class="bg-slate-50 p-3 rounded-2xl text-center"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Role</p><p class="text-[10px] font-black text-slate-700">${p.job}</p></div>
+                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Age</p><p class="text-xs font-black text-slate-700">${p.age}</p></div>
+                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Exp</p><p class="text-xs font-black text-slate-700">${p.exp}</p></div>
+                                <div class="bg-slate-50 p-3 rounded-2xl text-center border border-slate-100"><p class="text-[9px] uppercase font-bold text-slate-400 mb-1">Role</p><p class="text-[10px] font-black text-slate-700 leading-none mt-1">${p.job}</p></div>
                             </div>
-                            <div class="space-y-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600 leading-relaxed"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0 shadow-sm shadow-sky-300"></span><span>${t}</span></div>`).join('')}
+                            <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
+                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600 leading-relaxed"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
                             </div>
                         </div>
                     </div>
 
                     <div class="bg-white p-8 rounded-[3rem] shadow-2xl border border-slate-100 space-y-8">
                         <div class="text-center">
-                            <h3 class="font-black uppercase tracking-[0.2em] text-slate-400 text-[10px]">Scoring Criteria</h3>
-                            <div class="h-1 w-12 bg-sky-200 mx-auto mt-2 rounded-full"></div>
+                            <h3 class="font-black uppercase tracking-[0.2em] text-slate-400 text-[10px]">Scoring Rubric</h3>
                         </div>
                         
                         ${['k', 's', 'a'].map(cat => `
                             <div class="space-y-4">
-                                <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-[0.2em]">${cat === 'k' ? 'Knowledge Base' : cat === 's' ? 'Core Skills' : 'Behavior & Attitude'}</p>
+                                <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-[0.2em]">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
                                 <div class="flex justify-between gap-2.5">
                                     ${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="flex-1 h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}
                                 </div>
@@ -294,17 +429,17 @@
                         
                         <div class="pt-4">
                             ${state.isSubmitted 
-                                ? `<button onclick="navigate('PROFILE_SELECTION')" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-4 active:scale-95 transition-all"><span>Back to List</span> <svg class="w-6 h-6 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></button>`
+                                ? `<button onclick="navigate('PROFILE_SELECTION')" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Back to List</button>`
                                 : `<button onclick="handleSubmitEvaluation()" class="w-full py-5 bg-red-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Submit Review</button>`
                             }
                         </div>
                     </div>
 
                     ${state.result ? `
-                        <div class="p-10 rounded-[3rem] bg-white border-4 ${state.result.type === 'gold' ? 'border-yellow-400 bg-yellow-50/20' : state.result.type === 'silver' ? 'border-slate-300 bg-slate-50/20' : 'border-red-400 bg-red-50/20'} text-center animate-pop shadow-2xl">
+                        <div class="p-10 rounded-[3rem] bg-white border-4 ${state.result.type === 'gold' ? 'border-yellow-400' : state.result.type === 'silver' ? 'border-slate-300' : 'border-red-400'} text-center animate-pop shadow-2xl">
                             <div class="text-7xl mb-6 coin-bounce">${state.result.type === 'gold' ? '🏆' : state.result.type === 'silver' ? '🥈' : '💡'}</div>
-                            <h4 class="text-3xl font-black uppercase text-slate-800 tracking-tight mb-2">${state.result.type === 'gold' ? 'Gold Earned!' : state.result.type === 'silver' ? 'Silver Earned!' : 'Review Feedback'}</h4>
-                            <p class="text-slate-500 font-bold text-lg">${state.result.msg}</p>
+                            <h4 class="text-3xl font-black uppercase text-slate-800 tracking-tight">${state.result.type === 'gold' ? 'Perfect!' : 'Result'}</h4>
+                            <p class="text-slate-500 font-bold mt-2 leading-relaxed">${state.result.msg}</p>
                         </div>
                     ` : ''}
                 </main>
@@ -314,9 +449,8 @@
         function getButtonStyles(cat, val) {
             const userVal = state.evaluations[cat];
             const correctVal = state.selectedProfile.answers[cat];
-            
             if (state.isSubmitted) {
-                if (val === correctVal) return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 ring-4 ring-green-50 scale-105 shadow-inner";
+                if (val === correctVal) return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 scale-105 shadow-inner ring-4 ring-green-50";
                 if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
                 return "bg-slate-50 text-slate-300 opacity-40 cursor-not-allowed border border-slate-100";
             }
@@ -325,11 +459,7 @@
         }
 
         function renderLeaderboard() {
-            // Only show registry teams (participants)
-            const registry = JSON.parse(localStorage.getItem('teams_registry')) || [];
-            const participants = registry.filter(t => t.role === 'PARTICIPANT');
-            
-            // Sort by gold, then silver
+            const participants = state.registry.filter(t => t.role === 'PARTICIPANT');
             const rankings = participants.sort((a, b) => {
                 if (b.goldCoins !== a.goldCoins) return b.goldCoins - a.goldCoins;
                 return b.silverCoins - a.silverCoins;
@@ -340,26 +470,29 @@
                 <header class="p-5 flex items-center justify-between border-b border-slate-800">
                     <button onclick="navigate('LANDING')" class="p-2 active:scale-90"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-[0.3em] text-[10px] text-slate-500">Live Ranking</h1>
-                    <div class="w-10"></div>
+                    <div id="sync-indicator"></div>
                 </header>
                 <main class="p-6 max-w-xl mx-auto space-y-6">
                     <div class="text-center py-12 relative overflow-hidden">
                         <div class="absolute inset-0 bg-sky-600/10 blur-[100px] rounded-full"></div>
                         <div class="text-7xl mb-4 coin-bounce">👑</div>
                         <h2 class="text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2>
-                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-3">Participant Rankings</p>
+                        <p class="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-3 tracking-widest">Global Standings</p>
                     </div>
                     <div class="space-y-4">
                         ${rankings.length === 0 ? `
                             <div class="text-center py-12 bg-slate-800/20 rounded-[3rem] border-2 border-dashed border-slate-700">
-                                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">No teams joined yet</p>
+                                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Waiting for teams...</p>
                             </div>
                         ` : rankings.map(r => `
-                            <div class="flex items-center gap-5 p-6 rounded-[2.5rem] border-2 transition-all ${r.you ? 'bg-sky-600 border-sky-400 shadow-[0_20px_50px_rgba(2,132,199,0.4)] scale-[1.05] z-10' : 'bg-slate-800/40 border-slate-700'}">
+                            <div class="flex items-center gap-5 p-6 rounded-[2.5rem] border-2 transition-all ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl scale-[1.05] z-10' : 'bg-slate-800/40 border-slate-700'}">
                                 <div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : r.rank === 2 ? 'bg-slate-300 text-slate-800' : 'bg-slate-700 text-slate-400'}">
                                     ${r.rank}
                                 </div>
-                                <div class="flex-1 font-black text-xl tracking-tight">${r.name}${r.you ? ' (YOU)' : ''}</div>
+                                <div class="flex-1 font-black text-xl tracking-tight leading-none">
+                                    ${r.name}
+                                    ${r.you ? '<br><span class="text-[9px] uppercase opacity-60">My Team</span>' : ''}
+                                </div>
                                 <div class="flex gap-4">
                                     <div class="text-center"><p class="text-[9px] font-black uppercase opacity-40">G</p><p class="font-black text-yellow-400 text-lg">${r.goldCoins}</p></div>
                                     <div class="text-center"><p class="text-[9px] font-black uppercase opacity-40">S</p><p class="font-black text-slate-300 text-lg">${r.silverCoins}</p></div>
@@ -373,16 +506,13 @@
 
         function renderModal() {
             const container = document.getElementById('modal-container');
-            if (!state.isRubricOpen) {
-                container.classList.add('hidden');
-                return;
-            }
+            if (!state.isRubricOpen) { container.classList.add('hidden'); return; }
             container.classList.remove('hidden');
             container.innerHTML = `
                 <div class="bg-white rounded-[3rem] w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
-                    <div class="p-8 border-b flex justify-between items-center bg-slate-50/50">
-                        <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Evaluation Guide</h2>
-                        <button onclick="toggleRubric()" class="p-2 text-slate-400 hover:bg-slate-200 rounded-full transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <div class="p-8 border-b flex justify-between items-center bg-slate-50">
+                        <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2>
+                        <button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                     </div>
                     <div class="p-6 overflow-y-auto space-y-8 scroll-smooth">
                         ${RUBRIC_DATA.map(c => `
@@ -399,18 +529,15 @@
                             </div>
                         `).join('')}
                     </div>
-                    <div class="p-8 border-t bg-slate-50/50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
+                    <div class="p-8 border-t bg-slate-50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
                 </div>
             `;
         }
 
         // --- HANDLERS ---
-        window.setLoginRole = (role) => {
-            state.loginRole = role;
-            render();
-        };
+        window.setLoginRole = (role) => { state.loginRole = role; render(); };
 
-        window.handleLogin = () => {
+        window.handleLogin = async () => {
             if (state.loginRole === 'ADMIN') {
                 state.team = { name: "Administrator", role: 'ADMIN', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
                 save();
@@ -419,70 +546,69 @@
             }
 
             const name = document.getElementById('teamInput').value.trim();
-            if (!name) return alert("Please enter your Team Name to continue.");
+            if (!name) return alert("Please enter your Team Name to join.");
             
-            // Check if already exists in registry, or create new
-            const registry = JSON.parse(localStorage.getItem('teams_registry')) || [];
-            const existing = registry.find(t => t.name === name);
-            
-            state.team = existing ? existing : { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
-            save();
-            navigate('LANDING');
+            const btn = document.getElementById('loginBtn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = "Joining Cloud...";
+            btn.disabled = true;
+
+            try {
+                const registry = await fetchRegistry();
+                const existing = registry.find(t => t.name.toLowerCase() === name.toLowerCase());
+                state.team = existing ? existing : { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
+                save(); // This also pushes update to cloud
+                navigate('LANDING');
+            } catch (err) {
+                alert("Cloud connection failed. Using local session.");
+                state.team = { name, role: 'PARTICIPANT', goldCoins: 0, silverCoins: 0, completedProfiles: [] };
+                save();
+                navigate('LANDING');
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
         };
 
         window.handleLogout = () => {
-            if (!confirm("Logging out will clear your active session on this screen. Participant data is saved in the registry.")) return;
+            if (!confirm("Your progress is saved to the cloud. Logout now?")) return;
             localStorage.removeItem('team_data');
             state.team = null;
             navigate('LOGIN');
         };
 
-        window.handleScore = (cat, val) => {
-            if (state.isSubmitted) return;
-            state.evaluations[cat] = val;
-            render();
-        };
-
-        window.toggleRubric = () => {
-            state.isRubricOpen = !state.isRubricOpen;
-            render();
-        };
+        window.handleScore = (cat, val) => { if (state.isSubmitted) return; state.evaluations[cat] = val; render(); };
+        window.toggleRubric = () => { state.isRubricOpen = !state.isRubricOpen; render(); };
 
         window.handleSubmitEvaluation = () => {
             const { k, s, a } = state.evaluations;
-            if (k === null || s === null || a === null) return alert("Please score all categories before submitting.");
+            if (k === null || s === null || a === null) return alert("Please score all 3 categories.");
 
             const p = state.selectedProfile;
-            const checks = [k === p.answers.k, s === p.answers.s, a === p.answers.a];
-            const correctCount = checks.filter(Boolean).length;
+            const correctCount = [k === p.answers.k, s === p.answers.s, a === p.answers.a].filter(Boolean).length;
 
             let gold = 0, silver = 0;
-            if (correctCount === 3) {
-                gold = 1;
-                state.result = { type: 'gold', msg: "Perfect Evaluation! You analyzed this profile flawlessly." };
-            } else if (correctCount >= 1) {
-                silver = 1;
-                state.result = { type: 'silver', msg: `Good work! You got ${correctCount}/3 areas correct.` };
-            } else {
-                state.result = { type: 'fail', msg: "None of the scores matched our expert rubric. Try to be more precise next time." };
-            }
+            if (correctCount === 3) { gold = 1; state.result = { type: 'gold', msg: "Flawless assessment! Gold coin earned." }; }
+            else if (correctCount >= 1) { silver = 1; state.result = { type: 'silver', msg: `Strong analysis. ${correctCount}/3 correct. Silver coin earned.` }; }
+            else { state.result = { type: 'fail', msg: "Rubric mismatch. Keep practicing!" }; }
 
             state.team.goldCoins += gold;
             state.team.silverCoins += silver;
-            
-            if (!state.team.completedProfiles.includes(p.id)) {
-                state.team.completedProfiles.push(p.id);
-            }
+            if (!state.team.completedProfiles.includes(p.id)) state.team.completedProfiles.push(p.id);
 
             state.isSubmitted = true;
-            save();
+            save(); // Cloud sync
             render();
             setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
         };
 
         // --- INITIALIZATION ---
-        if (state.team) navigate('LANDING');
-        else navigate('LOGIN');
+        if (state.team) {
+            navigate('LANDING');
+            fetchRegistry(); // Silent background sync
+        } else {
+            navigate('LOGIN');
+        }
     </script>
 <script type="module" src="/index.tsx"></script>
 </body>
