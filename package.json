@@ -1,0 +1,31 @@
+{
+  "name": "training-evaluator-vanilla",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Training evaluator built with Vite + React + TypeScript",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhammed-zaghloul/united-game.git"
+  },
+  "homepage": "https://muhammed-zaghloul.github.io/united-game/",
+  "keywords": ["vite", "react", "typescript", "training-evaluator"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
