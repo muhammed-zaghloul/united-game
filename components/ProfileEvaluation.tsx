@@ -149,7 +149,7 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
                   alt={currentProfile.name} 
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentProfile.name)}&background=random&size=256&bold=true`;
+                    (e.target as HTMLImageElement).src = 'img/default-avatar.png';
                   }}
                 />
               </div>

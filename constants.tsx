@@ -38,7 +38,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "omar",
     name: "Omar Khalid",
-    avatar: "omar-avatar.png",
+    avatar: "img/omar-avatar.png",
     traits: [
       "Recognized as a technical expert within the branch; very few errors.",
       "Performs all duties independently and handles high-pressure periods well.",
@@ -54,7 +54,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "youseff",
     name: "Youseff Ahmad",
-    avatar: "youssef-avatar.png",
+    avatar: "img/youssef-avatar.png",
     traits: [
       "Demonstrates high level of technical competency in all pharmacy audits.",
       "Handles standard daily tasks and prescriptions reliably with minimal support.",
@@ -70,7 +70,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "faisal",
     name: "Faisal Bin Saud",
-    avatar: "faisal-avatar.png",
+    avatar: "img/faisal-avatar.png",
     traits: [
       "Displays solid, meeting-expectation level of technical knowledge.",
       "Capable of working independently and often seen mentoring junior staff.",
@@ -86,7 +86,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "fahd",
     name: 'Fahd "Grey"',
-    avatar: "fahd-avatar.png",
+    avatar: "img/fahd-avatar.png",
     traits: [
       "Enthusiastic, eager to learn, and keen to have good relations with his colleagues.",
       "Very good score in technical exams.",
@@ -103,7 +103,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "ali",
     name: "Ali Mansour",
-    avatar: "ali-avatar.png",
+    avatar: "img/ali-avatar.png",
     traits: [
       "Has sound knowledge of products and medical basics.",
       "Highly skilled at inventory management and very independent in his role.",
@@ -119,7 +119,7 @@ export const PROFILES: ProfileData[] = [
   {
     id: "hossam",
     name: "Hossam Hassan",
-    avatar: "hossam-avatar.png",
+    avatar: "img/hossam-avatar.png",
     traits: [
       "Struggles with newer technical medication updates; often needs to double-check.",
       "Exceptional sales skills; manages difficult customers independently and with ease.",
