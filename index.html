@@ -19,7 +19,7 @@
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .spin-slow { animation: spin 3s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .touch-draggable { touch-action: none; -webkit-user-drag: none; }
+        .touch-draggable { touch-action: none; user-select: none; }
         .touch-dragging { opacity: 0.6; }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
@@ -928,7 +928,7 @@
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" data-drop="pool" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
                             ${labels.map(item => {
                                 const isPlaced = Boolean(placements[item.key]);
-                                return `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${item.key}')" ondragend="handleDragEnd()" ontouchstart="handleTouchStart(event, '${item.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" class="touch-draggable ${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
+                                return `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart(event, '${item.key}')" ondragend="handleDragEnd()" ontouchstart="handleTouchStart(event, '${item.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" class="touch-draggable ${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
                                     ${item.label}
                                 </div>`;
                             }).join('')}
@@ -954,7 +954,7 @@
                                     const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
                                     return `<div data-drop-cell="true" data-performance="${cell.performance}" data-potential="${cell.potential}" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" class="${cell.tone} ${cell.text} rounded-2xl h-28 p-3 font-black text-xs flex flex-col justify-between border-2 border-white/60">
                                         <div class="opacity-90"></div>
-                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${occupant.key}')" ondragend="handleDragEnd()" ontouchstart="handleTouchStart(event, '${occupant.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" class="touch-draggable bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
+                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart(event, '${occupant.key}')" ondragend="handleDragEnd()" ontouchstart="handleTouchStart(event, '${occupant.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" class="touch-draggable bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
                                             ${occupant.label}
                                         </div>` : '<div class="h-10"></div>'}
                                     </div>`;
@@ -1204,13 +1204,20 @@
                 navigate('PROFILE_SELECTION');
             }
         };
-        window.handleDragStart = (profileId) => { if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return; state.draggingProfileId = profileId; };
+        window.handleDragStart = (event, profileId) => {
+            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
+            state.draggingProfileId = profileId;
+            if (event && event.dataTransfer) {
+                event.dataTransfer.setData('text/plain', profileId);
+                event.dataTransfer.effectAllowed = 'move';
+            }
+        };
         window.handleDragEnd = () => { state.draggingProfileId = null; };
         window.handleDragOver = (event) => { event.preventDefault(); };
         window.handleDropToPool = (event) => {
             event.preventDefault();
             if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            const key = state.draggingProfileId;
+            const key = (event && event.dataTransfer && event.dataTransfer.getData('text/plain')) || state.draggingProfileId;
             if (key && state.nineBoxPlacements[key]) {
                 delete state.nineBoxPlacements[key];
                 render();
@@ -1219,7 +1226,7 @@
         window.handleDrop = (event, performance, potential) => {
             event.preventDefault();
             if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            const key = state.draggingProfileId;
+            const key = (event && event.dataTransfer && event.dataTransfer.getData('text/plain')) || state.draggingProfileId;
             if (!key) return;
             const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === performance && state.nineBoxPlacements[id].potential === potential);
             if (existing && existing !== key) delete state.nineBoxPlacements[existing];
