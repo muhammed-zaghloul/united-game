@@ -2,12 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Leading Talenets</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
+        html { height: 100%; }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; min-height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        img { max-width: 100%; height: auto; display: block; }
+        button, input, select, textarea { font: inherit; }
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -378,11 +382,11 @@
         }
 
         function renderLogin() {
-            return `<div class="min-h-screen flex items-center justify-center p-6 bg-slate-900">
-                <div class="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-8 animate-pop">
+            return `<div class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-900">
+                <div class="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-6 sm:p-8 animate-pop">
                     <div class="text-center mb-8">
-                        <div class="inline-block mb-4"><img src="img/full-logo-png.png" alt="United Pharmacy Logo" class="w-32 h-32 object-contain mx-auto" /></div>
-                        <h1 class="text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">United Pharmacy</h1>
+                        <div class="inline-block mb-4"><img src="img/full-logo-png.png" alt="United Pharmacy Logo" class="w-24 h-24 sm:w-32 sm:h-32 object-contain mx-auto" /></div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">United Pharmacy</h1>
                         <p class="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-3">Training Portal</p>
                     </div>
                     <div class="flex p-1 bg-slate-100 rounded-2xl mb-8">
@@ -390,12 +394,12 @@
                         <button onclick="setLoginRole('ADMIN')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'ADMIN' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Admin</button>
                     </div>
                     <div class="space-y-6">
-                        ${state.loginRole === 'PARTICIPANT' ? `<div><input type="text" id="teamInput" placeholder="Enter Team Name..." class="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 outline-none font-bold text-lg"></div>` : 
+                        ${state.loginRole === 'PARTICIPANT' ? `<div><input type="text" id="teamInput" placeholder="Enter Team Name..." class="w-full px-5 py-4 sm:px-6 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 outline-none font-bold text-lg"></div>` : 
                         `<div class="space-y-4">
-                            <input type="text" id="adminUser" placeholder="@username" class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
-                            <input type="password" id="adminPass" placeholder="••••••••" class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
+                            <input type="text" id="adminUser" placeholder="@username" class="w-full px-5 py-4 sm:px-6 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
+                            <input type="password" id="adminPass" placeholder="••••••••" class="w-full px-5 py-4 sm:px-6 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold">
                         </div>`}
-                        <button id="loginBtn" onclick="handleLogin()" class="w-full py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-lg">Enter</button>
+                        <button id="loginBtn" onclick="handleLogin()" class="w-full py-4 sm:py-5 bg-sky-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all text-base sm:text-lg">Enter</button>
                     </div>
                 </div>
             </div>`;
@@ -404,7 +408,7 @@
         function renderLanding() {
             const isAdmin = state.team.role === 'ADMIN';
             return `<div class="min-h-screen bg-slate-50">
-                <header class="glass sticky top-0 z-40 p-5 flex items-center justify-between border-b shadow-sm">
+                <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
                         <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
@@ -414,29 +418,29 @@
                         <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
                     </div>
                 </header>
-                <main class="p-6 max-w-2xl mx-auto space-y-8 animate-pop">
-                    <div class="py-4"><h1 class="text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
+                <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
+                    <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
                     <div class="grid gap-6">
-                        ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group">
-                            <div class="bg-sky-600 p-5 rounded-[2rem]"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
+                        ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
+                            <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
                         </button>` : `
-                        <button onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
+                        <button onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
                         </button>
-                        <button onclick="${state.config.activity2 ? "navigate('NINE_BOX')" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
+                        <button onclick="${state.config.activity2 ? "navigate('NINE_BOX')" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
                         </button>
-                        <button onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
+                        <button onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
                         </button>
                         `}
-                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-8 rounded-[3rem] shadow-xl text-left flex items-center gap-6 transition-all active:scale-[0.98]">
-                            <div class="bg-slate-50 p-5 rounded-[2rem] text-slate-600"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
+                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
+                            <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
                         </button>
                     </div>
                 </main>
@@ -446,16 +450,16 @@
         function renderAdminDashboard() {
             const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
             return `<div class="min-h-screen bg-slate-100 pb-20">
-                <header class="bg-slate-900 text-white p-6 sticky top-0 z-50 flex items-center justify-between shadow-2xl">
+                <header class="bg-slate-900 text-white p-4 sm:p-6 sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
                     <div class="flex items-center gap-4">
                         <button onclick="navigate('LANDING')" class="p-2 hover:bg-slate-800 rounded-full transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                         <h1 class="font-black text-xl tracking-tighter uppercase">Admin Panel</h1>
                     </div>
                     <div id="sync-indicator"></div>
                 </header>
-                <div class="max-w-7xl mx-auto p-6 space-y-8">
+                <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl space-y-6">
+                        <div class="bg-white p-5 sm:p-8 rounded-[2.5rem] shadow-xl space-y-6">
                             <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Global Session Controls</h3>
                             <div class="space-y-3">
                                 <button onclick="toggleSessionConfig('activity1')" class="w-full flex items-center justify-between p-4 rounded-2xl border-2 ${state.config.activity1 ? 'bg-sky-50 border-sky-500' : 'bg-slate-50'}">
@@ -472,22 +476,22 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="bg-white p-8 rounded-[2.5rem] shadow-xl space-y-6">
+                        <div class="bg-white p-5 sm:p-8 rounded-[2.5rem] shadow-xl space-y-6">
                             <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Available Profiles</h3>
-                            <div class="grid grid-cols-3 gap-2">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                 ${PROFILES.map(p => `<button onclick="toggleProfileStatus('${p.id}')" class="p-3 rounded-xl border-2 text-[10px] font-black uppercase ${state.config.activeProfiles.includes(p.id) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}">${p.name.split(' ')[0]}</button>`).join('')}
                             </div>
                         </div>
                     </div>
                     <div class="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
-                        <div class="p-8 border-b flex items-center justify-between bg-slate-50/50">
+                        <div class="p-5 sm:p-8 border-b flex items-center justify-between bg-slate-50/50">
                             <h3 class="font-black text-slate-800 uppercase text-sm tracking-tight">Manage Teams (${teams.length})</h3>
                             <button onclick="adminAddTeam()" class="bg-slate-900 text-white px-6 py-2 rounded-xl font-black text-xs uppercase">New Team</button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left">
                                 <thead class="bg-slate-50 border-b">
-                                    <tr><th class="p-6 text-[10px] font-black uppercase text-slate-400">Team</th><th class="p-6 text-[10px] font-black uppercase text-slate-400">Progress (Activities)</th><th class="p-6 text-[10px] font-black uppercase text-slate-400">Coins</th><th class="p-6 text-[10px] font-black uppercase text-slate-400 text-right">Actions</th></tr>
+                                    <tr><th class="p-4 sm:p-6 text-[10px] font-black uppercase text-slate-400">Team</th><th class="p-4 sm:p-6 text-[10px] font-black uppercase text-slate-400">Progress (Activities)</th><th class="p-4 sm:p-6 text-[10px] font-black uppercase text-slate-400">Coins</th><th class="p-4 sm:p-6 text-[10px] font-black uppercase text-slate-400 text-right">Actions</th></tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     ${teams.map(t => {
@@ -496,20 +500,20 @@
                                         const completedNineBox = t.completedNineBox ? 1 : 0;
                                         const activityCount = [completedPerformance.length > 0, completedNineBox > 0, profiles.length > 0].filter(Boolean).length;
                                         return `<tr class="hover:bg-slate-50/80 transition-colors">
-                                            <td class="p-6 font-black text-slate-800">${t.name}</td>
-                                            <td class="p-6">
+                                            <td class="p-4 sm:p-6 font-black text-slate-800">${t.name}</td>
+                                            <td class="p-4 sm:p-6">
                                                 <div class="flex items-center gap-2">
                                                     <span class="text-sm font-black text-slate-800">${activityCount} / 3</span>
                                                     <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Completed</span>
                                                 </div>
                                             </td>
-                                            <td class="p-6">
+                                            <td class="p-4 sm:p-6">
                                                 <div class="flex gap-4">
                                                     <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">GOLD</span><span class="font-black text-yellow-600">${t.goldCoins}</span></div>
                                                     <div class="flex flex-col"><span class="text-[8px] font-black text-slate-400">SILVER</span><span class="font-black text-slate-400">${t.silverCoins}</span></div>
                                                 </div>
                                             </td>
-                                            <td class="p-6 text-right space-x-2">
+                                            <td class="p-4 sm:p-6 text-right space-x-2">
                                                 <div class="inline-flex items-center gap-2">
                                                     <button onclick="adminAdjustCoins('${t.name}', -1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">-G</button>
                                                     <button onclick="adminAdjustCoins('${t.name}', 1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">+G</button>
@@ -538,7 +542,7 @@
             const timeLeft = getRoundTimeLeftSeconds('performance');
             const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
             return `<div class="min-h-screen bg-slate-50 pb-28">
-                <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
+                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Performance & Potential</h1>
                     <div class="flex items-center gap-2">
@@ -546,19 +550,19 @@
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
-                <main class="p-6 max-w-xl mx-auto">
+                <main class="p-4 sm:p-6 max-w-xl mx-auto">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-black text-slate-800">${round.label}</h2>
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${PROFILE_ROUNDS.length}</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
                         const isDone = completed.some(c => (typeof c === 'string' ? c === p.id : c.id === p.id));
                         const isLocked = !state.config.activeProfiles.includes(p.id);
                         return `<div onclick="${isLocked ? '' : `navigate('PERFORMANCE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
-                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
+                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
                             <div class="relative">
-                                <img src="${p.avatar}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
+                                          <img src="${p.avatar}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
                                 ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>' : ''}
                                 ${isLocked ? '<div class="absolute inset-0 flex items-center justify-center text-slate-400"><svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg></div>' : ''}
                             </div>
@@ -579,13 +583,13 @@
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Performance & Potential</h1>
                     <div class="w-10"></div>
                 </header>
-                <main class="p-8 max-w-md mx-auto space-y-6">
+                <main class="p-4 sm:p-8 max-w-md mx-auto space-y-6">
                     <div class="text-center">
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 1</span>
                     </div>
                     ${PROFILE_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
-                        return `<button onclick="${isActive ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                        return `<button onclick="${isActive ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
                     }).join('')}
@@ -603,7 +607,7 @@
             const timeLeft = getRoundTimeLeftSeconds('ksa');
             const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
             return `<div class="min-h-screen bg-slate-50 pb-28">
-                <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
+                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('KSA_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Profile</h1>
                     <div class="flex items-center gap-2">
@@ -611,19 +615,19 @@
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
-                <main class="p-6 max-w-xl mx-auto">
+                <main class="p-4 sm:p-6 max-w-xl mx-auto">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-black text-slate-800">${round.label}</h2>
                         <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${PROFILE_ROUNDS.length}</span>
                     </div>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
                         const isDone = completed.some(c => (typeof c === 'string' ? c === p.id : c.id === p.id));
                         const isLocked = !state.config.activeProfiles.includes(p.id);
                         return `<div onclick="${isLocked ? '' : `navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
-                             class="bg-white p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
+                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
                             <div class="relative">
-                                <img src="${p.avatar}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
+                                          <img src="${p.avatar}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
                                 ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>' : ''}
                                 ${isLocked ? '<div class="absolute inset-0 flex items-center justify-center text-slate-400"><svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg></div>' : ''}
                             </div>
@@ -644,13 +648,13 @@
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Evaluating KSA</h1>
                     <div class="w-10"></div>
                 </header>
-                <main class="p-8 max-w-md mx-auto space-y-6">
+                <main class="p-4 sm:p-8 max-w-md mx-auto space-y-6">
                     <div class="text-center">
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 3</span>
                     </div>
                     ${PROFILE_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
-                        return `<button onclick="${isActive ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                        return `<button onclick="${isActive ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
                     }).join('')}
@@ -848,10 +852,10 @@
             const timeLeft = getRoundTimeLeftSeconds('performance');
             const timeUp = timeLeft === 0;
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
+                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('PERFORMANCE')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
-                    <div class="flex gap-2 items-center">
+                    <div class="flex flex-wrap gap-2 items-center">
                         ${timeLeft !== null ? `<div data-timer="performance" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
@@ -863,20 +867,20 @@
                         </div>
                     </div>
                 </header>
-                <main class="p-5 max-w-xl mx-auto space-y-8 animate-pop">
+                <main class="p-4 sm:p-5 max-w-xl mx-auto space-y-8 animate-pop">
                     <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
-                        <div class="bg-slate-800 text-white py-6 text-center font-black text-2xl tracking-tight">${p.name}</div>
+                        <div class="bg-slate-800 text-white py-6 text-center font-black text-xl sm:text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
-                            <div class="flex justify-center"><img src="${p.avatar}" class="w-44 h-44 rounded-full border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
+                            <div class="flex justify-center"><img src="${p.avatar}" class="w-32 h-32 sm:w-44 sm:h-44 rounded-full border-[8px] sm:border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
                             <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
                                 ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl space-y-8">
+                    <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
                         ${['performance', 'potential'].map(cat => `<div class="space-y-4">
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'performance' ? 'Performance' : 'Potential'}</p>
-                            <div class="flex justify-between gap-2.5">${[1, 2, 3].map(v => `<button onclick="handlePerformanceScore('${cat}', ${v})" class="flex-1 h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
+                            <div class="grid grid-cols-3 gap-2.5">${[1, 2, 3].map(v => `<button onclick="handlePerformanceScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
                         <button data-submit="performance" ${!state.isPerformanceSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
@@ -896,10 +900,10 @@
             const timeUp = timeLeft === 0;
 
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
+                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">9-Box Grid</h1>
-                    <div class="flex gap-2 items-center">
+                    <div class="flex flex-wrap gap-2 items-center">
                         ${timeLeft !== null ? `<div data-timer="nine" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
@@ -912,7 +916,7 @@
                     </div>
                 </header>
 
-                <main class="p-6 max-w-4xl mx-auto space-y-8 animate-pop">
+                <main class="p-4 sm:p-6 max-w-4xl mx-auto space-y-8 animate-pop">
                     <section>
                         <div class="flex items-center justify-between mb-3">
                             <h2 class="text-lg font-black text-slate-800">Box Names</h2>
@@ -928,7 +932,8 @@
                         </div>
                     </section>
 
-                    <section class="bg-white rounded-[2.5rem] p-6 shadow-2xl">
+                    <section class="bg-white rounded-[2.5rem] p-4 sm:p-6 shadow-2xl overflow-x-auto sm:overflow-visible">
+                        <div class="min-w-[520px] sm:min-w-0">
                         <div class="grid grid-cols-[36px,1fr] gap-3 items-stretch">
                             <div class="flex flex-col items-center h-full">
                                 <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 [writing-mode:vertical-rl] rotate-180 mb-2">Potential</span>
@@ -962,6 +967,7 @@
                                 <div class="text-center text-xs font-black uppercase tracking-widest text-slate-400">Performance</div>
                             </div>
                         </div>
+                        </div>
                     </section>
 
                     <section class="pt-2">
@@ -977,10 +983,10 @@
             const timeLeft = getRoundTimeLeftSeconds('ksa');
             const timeUp = timeLeft === 0;
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
+                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('KSA')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
-                    <div class="flex gap-2 items-center">
+                    <div class="flex flex-wrap gap-2 items-center">
                         ${timeLeft !== null ? `<div data-timer="ksa" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
@@ -992,20 +998,20 @@
                         </div>
                     </div>
                 </header>
-                <main class="p-5 max-w-xl mx-auto space-y-8 animate-pop">
+                <main class="p-4 sm:p-5 max-w-xl mx-auto space-y-8 animate-pop">
                     <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
-                        <div class="bg-slate-800 text-white py-6 text-center font-black text-2xl tracking-tight">${p.name}</div>
+                        <div class="bg-slate-800 text-white py-6 text-center font-black text-xl sm:text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
-                            <div class="flex justify-center"><img src="${p.avatar}" class="w-44 h-44 rounded-full border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
+                            <div class="flex justify-center"><img src="${p.avatar}" class="w-32 h-32 sm:w-44 sm:h-44 rounded-full border-[8px] sm:border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
                             <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
                                 ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white p-8 rounded-[3rem] shadow-2xl space-y-8">
+                    <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
                         ${['k', 's', 'a'].map(cat => `<div class="space-y-4">
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
-                            <div class="flex justify-between gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="flex-1 h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
+                            <div class="grid grid-cols-5 max-[420px]:grid-cols-3 gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
                         <button data-submit="ksa" ${!state.isSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
@@ -1048,12 +1054,12 @@
                     <h1 class="font-black uppercase tracking-[0.3em] text-[10px] text-slate-500">Live Ranking</h1>
                     <div id="sync-indicator"></div>
                 </header>
-                <main class="p-6 max-w-xl mx-auto space-y-6">
-                    <div class="text-center py-12"><div class="mb-4 coin-bounce flex justify-center"><img src="img/golden-coin.png" alt="Gold coin" class="w-16 h-16" /></div><h2 class="text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2></div>
+                <main class="p-4 sm:p-6 max-w-xl mx-auto space-y-6">
+                    <div class="text-center py-10 sm:py-12"><div class="mb-4 coin-bounce flex justify-center"><img src="img/golden-coin.png" alt="Gold coin" class="w-12 h-12 sm:w-16 sm:h-16" /></div><h2 class="text-4xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2></div>
                     <div class="space-y-4">
-                        ${rankings.map(r => `<div class="flex items-center gap-5 p-6 rounded-[2.5rem] border-2 ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl' : 'bg-slate-800/40 border-slate-700'}">
-                                <div class="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : 'bg-slate-700 text-slate-400'}">${r.rank}</div>
-                                <div class="flex-1 font-black text-xl tracking-tight">${r.name}${r.you ? ' (YOU)' : ''}</div>
+                        ${rankings.map(r => `<div class="flex flex-wrap items-center gap-4 sm:gap-5 p-4 sm:p-6 rounded-[2.5rem] border-2 ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl' : 'bg-slate-800/40 border-slate-700'}">
+                                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-lg sm:text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : 'bg-slate-700 text-slate-400'}">${r.rank}</div>
+                                <div class="flex-1 font-black text-lg sm:text-xl tracking-tight">${r.name}${r.you ? ' (YOU)' : ''}</div>
                                 <div class="flex gap-4">
                                     <div class="text-center flex flex-col items-center gap-1">
                                         <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
@@ -1111,9 +1117,9 @@
             const rubricData = state.rubricType === 'PERFORMANCE' ? PERFORMANCE_RUBRIC_DATA : RUBRIC_DATA;
             const rubricScores = state.rubricType === 'PERFORMANCE' ? [1, 2, 3] : [1, 2, 3, 4, 5];
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
-                <div class="p-8 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2><button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+                <div class="p-6 sm:p-8 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2><button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
                 <div class="p-6 overflow-y-auto space-y-8">${rubricData.map(c => `<div class="space-y-4"><h3 class="text-sky-600 font-black uppercase text-xs flex items-center gap-2"><span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>${c.name}</h3><div class="grid gap-2.5">${rubricScores.map(s => `<div class="flex items-start gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100"><div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">${s}</div><p class="text-xs font-semibold text-slate-600 leading-relaxed">${c.levels[s]}</p></div>`).join('')}</div></div>`).join('')}</div>
-                <div class="p-8 border-t bg-slate-50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
+                <div class="p-6 sm:p-8 border-t bg-slate-50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
             </div>`;
         }
 
@@ -1129,10 +1135,10 @@
             const message = state.coinPopupDetails.message || (isMulti ? '' : isGold ? 'Perfect score earned a gold coin.' : isSilver ? 'Nice! You earned a silver coin.' : 'Try again on the next profile.');
             const coinImg = isGold ? 'img/golden-coin.png' : isSilver ? 'img/silver-coin.png' : '';
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
-                <div class="p-6 border-b bg-slate-50 text-center">
+                <div class="p-5 sm:p-6 border-b bg-slate-50 text-center">
                     <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">${title}</h2>
                 </div>
-                <div class="p-8 flex flex-col items-center gap-4 text-center">
+                <div class="p-6 sm:p-8 flex flex-col items-center gap-4 text-center">
                     ${isMulti ? `<div class="flex items-center gap-6">
                         <div class="flex flex-col items-center gap-2">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-14 h-14" />
@@ -1145,7 +1151,7 @@
                     </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>'}
                     <p class="text-sm font-semibold text-slate-600">${message}</p>
                 </div>
-                <div class="p-6 border-t bg-slate-50"><button onclick="closeCoinPopup()" class="w-full py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Continue</button></div>
+                <div class="p-5 sm:p-6 border-t bg-slate-50"><button onclick="closeCoinPopup()" class="w-full py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Continue</button></div>
             </div>`;
         }
 
