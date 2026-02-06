@@ -20,6 +20,7 @@
         .spin-slow { animation: spin 3s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .touch-draggable { touch-action: none; -webkit-user-drag: none; }
+        .touch-dragging { opacity: 0.6; }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -170,6 +171,7 @@
             nineBoxPlacements: {},
             isNineBoxSubmitted: false,
             draggingProfileId: null,
+            touchDropTarget: null,
             profilePreviewId: null,
             showCoinPopup: false,
             coinPopupType: null,
@@ -1227,35 +1229,53 @@
         window.handleTouchStart = (event, key) => {
             if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
             state.draggingProfileId = key;
+            state.touchDropTarget = null;
             const touch = event.touches && event.touches[0];
             if (!touch) return;
             const el = event.currentTarget;
-            if (el) el.classList.add('opacity-60');
+            if (el) el.classList.add('touch-dragging');
             event.preventDefault();
         };
         window.handleTouchMove = (event) => {
             if (!state.draggingProfileId) return;
+            const touch = event.touches && event.touches[0];
+            if (!touch) return;
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (target) {
+                const pool = target.closest('[data-drop="pool"]');
+                if (pool) {
+                    state.touchDropTarget = { type: 'pool' };
+                } else {
+                    const cell = target.closest('[data-drop-cell]');
+                    if (cell) {
+                        state.touchDropTarget = {
+                            type: 'cell',
+                            performance: Number(cell.getAttribute('data-performance')),
+                            potential: Number(cell.getAttribute('data-potential'))
+                        };
+                    }
+                }
+            }
             event.preventDefault();
         };
         window.handleTouchEnd = (event) => {
             const key = state.draggingProfileId;
             state.draggingProfileId = null;
+            document.querySelectorAll('.touch-dragging').forEach((el) => el.classList.remove('touch-dragging'));
             const touch = event.changedTouches && event.changedTouches[0];
             if (!touch || state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (!target) return;
-            const pool = target.closest('[data-drop="pool"]');
-            if (pool) {
+            const dropTarget = state.touchDropTarget;
+            state.touchDropTarget = null;
+            if (dropTarget && dropTarget.type === 'pool') {
                 if (key && state.nineBoxPlacements[key]) {
                     delete state.nineBoxPlacements[key];
                     render();
                 }
                 return;
             }
-            const cell = target.closest('[data-drop-cell]');
-            if (!cell || !key) return;
-            const performance = Number(cell.getAttribute('data-performance'));
-            const potential = Number(cell.getAttribute('data-potential'));
+            const performance = dropTarget && dropTarget.type === 'cell' ? dropTarget.performance : null;
+            const potential = dropTarget && dropTarget.type === 'cell' ? dropTarget.potential : null;
+            if (!key || performance === null || potential === null) return;
             const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === performance && state.nineBoxPlacements[id].potential === potential);
             if (existing && existing !== key) delete state.nineBoxPlacements[existing];
             state.nineBoxPlacements[key] = { performance, potential };
