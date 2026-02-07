@@ -19,8 +19,6 @@
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .spin-slow { animation: spin 3s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .touch-dragging { opacity: 0.5; transform: scale(1.05); }
-        [draggable="true"] { touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -171,7 +169,6 @@
             nineBoxPlacements: {},
             isNineBoxSubmitted: false,
             draggingProfileId: null,
-            touchDropTarget: null,
             profilePreviewId: null,
             showCoinPopup: false,
             coinPopupType: null,
@@ -925,10 +922,10 @@
                             <h2 class="text-lg font-black text-slate-800">Box Names</h2>
                             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Drag into grid</p>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" data-drop="pool" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
                             ${labels.map(item => {
                                 const isPlaced = Boolean(placements[item.key]);
-                                return `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart(event, '${item.key}')" ondragend="handleDragEnd(event)" ontouchstart="handleTouchStart(event, '${item.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" style="touch-action:none;" class="select-none cursor-move ${isPlaced ? 'opacity-40 pointer-events-none' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
+                                return `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${item.key}')" ondragend="handleDragEnd()" class="${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
                                     ${item.label}
                                 </div>`;
                             }).join('')}
@@ -952,9 +949,9 @@
                                     const occupant = occupantKey ? labels.find(l => l.key === occupantKey) : null;
                                     const status = occupantKey && feedback[occupantKey] ? feedback[occupantKey].status : null;
                                     const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
-                                    return `<div data-drop-cell="true" data-performance="${cell.performance}" data-potential="${cell.potential}" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" class="${cell.tone} ${cell.text} rounded-2xl h-28 p-3 font-black text-xs flex flex-col justify-between border-2 border-white/60">
+                                    return `<div ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" class="${cell.tone} ${cell.text} rounded-2xl h-28 p-3 font-black text-xs flex flex-col justify-between border-2 border-white/60">
                                         <div class="opacity-90"></div>
-                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart(event, '${occupant.key}')" ondragend="handleDragEnd(event)" ontouchstart="handleTouchStart(event, '${occupant.key}')" ontouchmove="handleTouchMove(event)" ontouchend="handleTouchEnd(event)" style="touch-action:none;" class="select-none cursor-move bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
+                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${occupant.key}')" ondragend="handleDragEnd()" class="bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
                                             ${occupant.label}
                                         </div>` : '<div class="h-10"></div>'}
                                     </div>`;
@@ -1204,107 +1201,27 @@
                 navigate('PROFILE_SELECTION');
             }
         };
-        // Desktop drag-drop handlers
-        window.handleDragStart = function(e, profileId) {
-            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) {
-                e.preventDefault();
-                return false;
-            }
-            state.draggingProfileId = profileId;
-            e.dataTransfer.setData('text/plain', profileId);
-            e.dataTransfer.effectAllowed = 'move';
-            e.target.classList.add('touch-dragging');
-        };
-        window.handleDragEnd = function(e) {
-            state.draggingProfileId = null;
-            e.target.classList.remove('touch-dragging');
-        };
-        window.handleDragOver = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-            return false;
-        };
-        window.handleDropToPool = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        window.handleDragStart = (profileId) => { if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return; state.draggingProfileId = profileId; };
+        window.handleDragEnd = () => { state.draggingProfileId = null; };
+        window.handleDragOver = (event) => { event.preventDefault(); };
+        window.handleDropToPool = (event) => {
+            event.preventDefault();
             if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            const key = e.dataTransfer ? e.dataTransfer.getData('text/plain') : state.draggingProfileId;
+            const key = state.draggingProfileId;
             if (key && state.nineBoxPlacements[key]) {
                 delete state.nineBoxPlacements[key];
                 render();
             }
         };
-        window.handleDrop = function(e, performance, potential) {
-            e.preventDefault();
-            e.stopPropagation();
+        window.handleDrop = (event, performance, potential) => {
+            event.preventDefault();
             if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            const key = e.dataTransfer ? e.dataTransfer.getData('text/plain') : state.draggingProfileId;
+            const key = state.draggingProfileId;
             if (!key) return;
             const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === performance && state.nineBoxPlacements[id].potential === potential);
             if (existing && existing !== key) delete state.nineBoxPlacements[existing];
             state.nineBoxPlacements[key] = { performance, potential };
             render();
-        };
-        // Touch handlers for mobile
-        window.handleTouchStart = function(e, key) {
-            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
-            e.preventDefault();
-            state.draggingProfileId = key;
-            state.touchDropTarget = null;
-            state.draggedElement = e.target.closest('[draggable]');
-            if (state.draggedElement) state.draggedElement.classList.add('touch-dragging');
-        };
-        window.handleTouchMove = function(e) {
-            if (!state.draggingProfileId) return;
-            e.preventDefault();
-            const touch = e.touches[0];
-            // Hide dragged element briefly to get element below
-            if (state.draggedElement) state.draggedElement.style.visibility = 'hidden';
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (state.draggedElement) state.draggedElement.style.visibility = '';
-            if (!target) { state.touchDropTarget = null; return; }
-            const pool = target.closest('[data-drop="pool"]');
-            if (pool) {
-                state.touchDropTarget = { type: 'pool' };
-                return;
-            }
-            const cell = target.closest('[data-drop-cell]');
-            if (cell) {
-                state.touchDropTarget = {
-                    type: 'cell',
-                    performance: Number(cell.getAttribute('data-performance')),
-                    potential: Number(cell.getAttribute('data-potential'))
-                };
-            } else {
-                state.touchDropTarget = null;
-            }
-        };
-        window.handleTouchEnd = function(e) {
-            e.preventDefault();
-            const key = state.draggingProfileId;
-            state.draggingProfileId = null;
-            if (state.draggedElement) {
-                state.draggedElement.classList.remove('touch-dragging');
-                state.draggedElement = null;
-            }
-            if (!key || state.isNineBoxSubmitted || isNineBoxTimeUp()) { state.touchDropTarget = null; return; }
-            const dropTarget = state.touchDropTarget;
-            state.touchDropTarget = null;
-            if (!dropTarget) return;
-            if (dropTarget.type === 'pool') {
-                if (state.nineBoxPlacements[key]) {
-                    delete state.nineBoxPlacements[key];
-                    render();
-                }
-                return;
-            }
-            if (dropTarget.type === 'cell') {
-                const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === dropTarget.performance && state.nineBoxPlacements[id].potential === dropTarget.potential);
-                if (existing && existing !== key) delete state.nineBoxPlacements[existing];
-                state.nineBoxPlacements[key] = { performance: dropTarget.performance, potential: dropTarget.potential };
-                render();
-            }
         };
         window.handleSubmitEvaluation = () => {
             if (isRoundTimeUp('ksa')) return alert("Time is up for this round.");
