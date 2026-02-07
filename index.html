@@ -137,17 +137,17 @@
             ], answers: { k: 2, s: 4, a: 2 }, performancePotential: { performance: 2, potential: 2 } }
         ];
 
-        const storedPerfTimers = (() => {
-            try { return JSON.parse(localStorage.getItem('perf_round_timers') || '{}'); } catch (err) { return {}; }
-        })();
-        const storedKsaTimers = (() => {
-            try { return JSON.parse(localStorage.getItem('ksa_round_timers') || '{}'); } catch (err) { return {}; }
-        })();
-        const storedNineBoxTimer = (() => {
-            const raw = localStorage.getItem('nine_box_timer_end');
-            const num = Number(raw);
-            return Number.isFinite(num) ? num : null;
-        })();
+        // Timers removed for all activities. Clear any legacy stored timers so
+        // previous sessions don't keep showing "Time Up".
+        try {
+            localStorage.removeItem('perf_round_timers');
+            localStorage.removeItem('ksa_round_timers');
+            localStorage.removeItem('nine_box_timer_end');
+        } catch (err) {}
+
+        const storedPerfTimers = {};
+        const storedKsaTimers = {};
+        const storedNineBoxTimer = null;
 
         let state = {
             view: 'LOGIN',
@@ -336,9 +336,6 @@
             }
             if (view === 'NINE_BOX') {
                 const saved = state.team?.completedNineBox;
-                if (!saved || !saved.mode) {
-                    ensureNineBoxTimer();
-                }
                 if (saved && saved.mode === 'labels' && saved.placements) {
                     state.nineBoxPlacements = saved.placements;
                     state.isNineBoxSubmitted = true;
@@ -370,7 +367,6 @@
             renderModal();
             renderCoinPopup();
             renderSyncStatus();
-            ensureTimerTick();
         }
 
         function renderSyncStatus() {
@@ -537,16 +533,13 @@
             const completedIds = getCompletedIds(completed);
             const activeIndex = getActiveRoundIndex(completedIds);
             const roundIndex = state.performanceRoundIndex !== null ? state.performanceRoundIndex : activeIndex;
-            ensureRoundTimer('performance', roundIndex);
             const round = PROFILE_ROUNDS[roundIndex];
-            const timeLeft = getRoundTimeLeftSeconds('performance');
             const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
             return `<div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Performance & Potential</h1>
                     <div class="flex items-center gap-2">
-                        ${timeLeft !== null ? `<div data-timer="performance" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
@@ -602,16 +595,13 @@
             const completedIds = getCompletedIds(completed);
             const activeIndex = getActiveRoundIndex(completedIds);
             const roundIndex = state.ksaRoundIndex !== null ? state.ksaRoundIndex : activeIndex;
-            ensureRoundTimer('ksa', roundIndex);
             const round = PROFILE_ROUNDS[roundIndex];
-            const timeLeft = getRoundTimeLeftSeconds('ksa');
             const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
             return `<div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('KSA_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Profile</h1>
                     <div class="flex items-center gap-2">
-                        ${timeLeft !== null ? `<div data-timer="ksa" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
@@ -679,34 +669,18 @@
         ];
 
         function getRoundDurationMinutes(activity, roundIndex) {
-            if (roundIndex === 0) return 0;
-            if (activity === 'performance') return roundIndex === 1 ? 5 : 5;
-            if (activity === 'ksa') return roundIndex === 1 ? 8 : 10;
+            // Timers removed
             return 0;
         }
 
         function ensureRoundTimer(activity, roundIndex) {
-            const minutes = getRoundDurationMinutes(activity, roundIndex);
-            if (!minutes) return null;
-            const timers = activity === 'performance' ? state.performanceRoundTimers : state.ksaRoundTimers;
-            if (!timers[roundIndex]) {
-                const end = Date.now() + minutes * 60 * 1000;
-                timers[roundIndex] = end;
-                if (activity === 'performance') {
-                    localStorage.setItem('perf_round_timers', JSON.stringify(timers));
-                } else {
-                    localStorage.setItem('ksa_round_timers', JSON.stringify(timers));
-                }
-            }
-            return timers[roundIndex];
+            // Timers removed
+            return null;
         }
 
         function ensureNineBoxTimer() {
-            if (state.nineBoxTimerEnd) return state.nineBoxTimerEnd;
-            const end = Date.now() + 5 * 60 * 1000;
-            state.nineBoxTimerEnd = end;
-            localStorage.setItem('nine_box_timer_end', String(end));
-            return end;
+            // Timers removed
+            return null;
         }
 
         function getTimeLeftSeconds(endMs) {
@@ -723,71 +697,17 @@
         }
 
         function updateTimerDisplays() {
-            const perfTime = getRoundTimeLeftSeconds('performance');
-            const ksaTime = getRoundTimeLeftSeconds('ksa');
-            const nineTime = getTimeLeftSeconds(state.nineBoxTimerEnd);
-            const timers = [
-                { key: 'performance', seconds: perfTime },
-                { key: 'ksa', seconds: ksaTime },
-                { key: 'nine', seconds: nineTime }
-            ];
-
-            timers.forEach((t) => {
-                const el = document.querySelector(`[data-timer="${t.key}"]`);
-                if (el) {
-                    el.textContent = t.seconds === null ? '' : formatTimer(t.seconds);
-                }
-            });
-
-            const perfBtn = document.querySelector('[data-submit="performance"]');
-            if (perfBtn) {
-                const isUp = perfTime === 0;
-                perfBtn.disabled = isUp;
-                if (isUp) {
-                    perfBtn.textContent = 'Time Up';
-                    perfBtn.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
-                }
-            }
-
-            const ksaBtn = document.querySelector('[data-submit="ksa"]');
-            if (ksaBtn) {
-                const isUp = ksaTime === 0;
-                ksaBtn.disabled = isUp;
-                if (isUp) {
-                    ksaBtn.textContent = 'Time Up';
-                    ksaBtn.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
-                }
-            }
-
-            const nineBtn = document.querySelector('[data-submit="nine"]');
-            if (nineBtn) {
-                const isUp = nineTime === 0;
-                nineBtn.disabled = isUp;
-                if (isUp) {
-                    nineBtn.textContent = 'Time Up';
-                    nineBtn.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
-                }
-            }
+            // Timers removed
         }
 
         function hasActiveTimers() {
-            const now = Date.now();
-            const perfActive = Object.values(state.performanceRoundTimers || {}).some((t) => t && t > now);
-            const ksaActive = Object.values(state.ksaRoundTimers || {}).some((t) => t && t > now);
-            const nineActive = state.nineBoxTimerEnd && state.nineBoxTimerEnd > now;
-            return perfActive || ksaActive || nineActive;
+            // Timers removed
+            return false;
         }
 
         function ensureTimerTick() {
-            if (state.timerId) return;
-            state.timerId = setInterval(() => {
-                if (hasActiveTimers()) {
-                    updateTimerDisplays();
-                } else {
-                    clearInterval(state.timerId);
-                    state.timerId = null;
-                }
-            }, 1000);
+            // Timers removed
+            return;
         }
 
         function getCurrentPerformanceRoundIndex() {
@@ -803,20 +723,18 @@
         }
 
         function getRoundTimeLeftSeconds(activity) {
-            const index = activity === 'performance' ? getCurrentPerformanceRoundIndex() : getCurrentKsaRoundIndex();
-            const timers = activity === 'performance' ? state.performanceRoundTimers : state.ksaRoundTimers;
-            const end = timers[index];
-            return getTimeLeftSeconds(end);
+            // Timers removed
+            return null;
         }
 
         function isRoundTimeUp(activity) {
-            const left = getRoundTimeLeftSeconds(activity);
-            return left === 0;
+            // Timers removed
+            return false;
         }
 
         function isNineBoxTimeUp() {
-            const left = getTimeLeftSeconds(state.nineBoxTimerEnd);
-            return left === 0;
+            // Timers removed
+            return false;
         }
 
         function getCompletedIds(list) {
@@ -849,14 +767,11 @@
 
         function renderPerformanceEvaluation() {
             const p = state.selectedProfile;
-            const timeLeft = getRoundTimeLeftSeconds('performance');
-            const timeUp = timeLeft === 0;
             return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('PERFORMANCE')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
                     <div class="flex flex-wrap gap-2 items-center">
-                        ${timeLeft !== null ? `<div data-timer="performance" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -882,7 +797,7 @@
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'performance' ? 'Performance' : 'Potential'}</p>
                             <div class="grid grid-cols-3 gap-2.5">${[1, 2, 3].map(v => `<button onclick="handlePerformanceScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
-                        <button data-submit="performance" ${!state.isPerformanceSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
+                        <button data-submit="performance" onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : 'Submit Review'}</button>
                     </div>
                 </main>
             </div>`;
@@ -896,15 +811,12 @@
             const labels = gridCells.map(cell => ({ key: cell.key, label: cell.label }));
             const placedKeys = Object.keys(placements);
             const canSubmit = placedKeys.length === labels.length;
-            const timeLeft = getTimeLeftSeconds(state.nineBoxTimerEnd);
-            const timeUp = timeLeft === 0;
 
             return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">9-Box Grid</h1>
                     <div class="flex flex-wrap gap-2 items-center">
-                        ${timeLeft !== null ? `<div data-timer="nine" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -971,7 +883,7 @@
                     </section>
 
                     <section class="pt-2">
-                        <button data-submit="nine" ${!state.isNineBoxSubmitted && (!canSubmit || timeUp) ? 'disabled' : ''} onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">${state.isNineBoxSubmitted ? 'Back to Dashboard' : timeUp ? 'Time Up' : 'Submit Grid'}</button>
+                        <button data-submit="nine" ${!state.isNineBoxSubmitted && (!canSubmit) ? 'disabled' : ''} onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">${state.isNineBoxSubmitted ? 'Back to Dashboard' : 'Submit Grid'}</button>
                         ${!state.isNineBoxSubmitted ? `<p class="text-center text-[10px] font-bold text-slate-400 mt-2">${placedKeys.length} / ${labels.length} placed</p>` : ''}
                     </section>
                 </main>
@@ -980,14 +892,11 @@
 
         function renderEvaluation() {
             const p = state.selectedProfile;
-            const timeLeft = getRoundTimeLeftSeconds('ksa');
-            const timeUp = timeLeft === 0;
             return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('KSA')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
                     <div class="flex flex-wrap gap-2 items-center">
-                        ${timeLeft !== null ? `<div data-timer="ksa" class="bg-slate-900 text-white px-3 py-1 rounded-full text-[10px] font-black">${formatTimer(timeLeft)}</div>` : ''}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -1013,7 +922,7 @@
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
                             <div class="grid grid-cols-5 max-[420px]:grid-cols-3 gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
-                        <button data-submit="ksa" ${!state.isSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
+                        <button data-submit="ksa" onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : 'Submit Review'}</button>
                     </div>
                 </main>
             </div>`;
@@ -1027,7 +936,6 @@
                 if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
                 return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100";
             }
-            if (isRoundTimeUp('ksa')) return "bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed";
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
             return "bg-white text-slate-500 border border-slate-200 active:bg-sky-50";
         }
@@ -1040,7 +948,6 @@
                 if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
                 return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100";
             }
-            if (isRoundTimeUp('performance')) return "bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed";
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
             return "bg-white text-slate-500 border border-slate-200 active:bg-sky-50";
         }
@@ -1182,8 +1089,8 @@
         };
 
         window.handleLogout = () => { localStorage.removeItem('team_data'); state.team = null; navigate('LOGIN'); };
-        window.handleScore = (cat, val) => { if (state.isSubmitted || isRoundTimeUp('ksa')) return; state.evaluations[cat] = val; render(); };
-        window.handlePerformanceScore = (cat, val) => { if (state.isPerformanceSubmitted || isRoundTimeUp('performance')) return; state.performanceEvaluations[cat] = val; render(); };
+        window.handleScore = (cat, val) => { if (state.isSubmitted) return; state.evaluations[cat] = val; render(); };
+        window.handlePerformanceScore = (cat, val) => { if (state.isPerformanceSubmitted) return; state.performanceEvaluations[cat] = val; render(); };
         window.toggleRubric = (type) => { state.profilePreviewId = null; state.rubricType = type || state.rubricType || 'KSA'; state.isRubricOpen = !state.isRubricOpen; render(); };
         window.closeCoinPopup = () => { state.showCoinPopup = false; render(); };
         window.openProfilePreview = (profileId) => { state.isRubricOpen = false; state.profilePreviewId = profileId; render(); };
@@ -1191,22 +1098,20 @@
         window.openRound = (activity, index) => {
             if (activity === 'performance') {
                 state.performanceRoundIndex = index;
-                ensureRoundTimer('performance', index);
                 navigate('PERFORMANCE_SELECTION');
                 return;
             }
             if (activity === 'ksa') {
                 state.ksaRoundIndex = index;
-                ensureRoundTimer('ksa', index);
                 navigate('PROFILE_SELECTION');
             }
         };
-        window.handleDragStart = (profileId) => { if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return; state.draggingProfileId = profileId; };
+        window.handleDragStart = (profileId) => { if (state.isNineBoxSubmitted) return; state.draggingProfileId = profileId; };
         window.handleDragEnd = () => { state.draggingProfileId = null; };
         window.handleDragOver = (event) => { event.preventDefault(); };
         window.handleDropToPool = (event) => {
             event.preventDefault();
-            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
+            if (state.isNineBoxSubmitted) return;
             const key = state.draggingProfileId;
             if (key && state.nineBoxPlacements[key]) {
                 delete state.nineBoxPlacements[key];
@@ -1215,7 +1120,7 @@
         };
         window.handleDrop = (event, performance, potential) => {
             event.preventDefault();
-            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) return;
+            if (state.isNineBoxSubmitted) return;
             const key = state.draggingProfileId;
             if (!key) return;
             const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === performance && state.nineBoxPlacements[id].potential === potential);
@@ -1224,7 +1129,6 @@
             render();
         };
         window.handleSubmitEvaluation = () => {
-            if (isRoundTimeUp('ksa')) return alert("Time is up for this round.");
             const { k, s, a } = state.evaluations;
             if (k === null || s === null || a === null) return alert("Score all 3.");
             const p = state.selectedProfile;
@@ -1256,7 +1160,6 @@
         };
 
         window.handleSubmitPerformance = () => {
-            if (isRoundTimeUp('performance')) return alert("Time is up for this round.");
             const { performance, potential } = state.performanceEvaluations;
             if (performance === null || potential === null) return alert("Score both fields.");
             const p = state.selectedProfile;
@@ -1286,7 +1189,6 @@
         };
 
         window.handleSubmitNineBox = () => {
-            if (isNineBoxTimeUp()) return alert("Time is up for this activity.");
             if (state.isNineBoxSubmitted) return;
             const cells = getNineBoxCells();
             const labels = cells.map(cell => cell.key);

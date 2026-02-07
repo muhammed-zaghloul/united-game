@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import RubricModal from './RubricModal';
 import { TeamState, ProfileData } from '../types';
 
@@ -12,7 +12,6 @@ interface ProfileEvaluationProps {
 
 const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, onUpdateCoins, onBack }) => {
   const [isRubricOpen, setIsRubricOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(120); // 2 mins per evaluation
   const [evaluations, setEvaluations] = useState<Record<string, number | null>>({
     knowledge: null,
     skills: null,
@@ -22,19 +21,6 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
   const [resultMessage, setResultMessage] = useState<{ text: string, type: 'success' | 'partial' | 'fail' } | null>(null);
   
   const currentProfile = profile;
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleSelect = (field: string, value: number) => {
     if (isSubmitted) return;
@@ -116,11 +102,6 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
           >
             VIEW RUBRIC
           </button>
-        </div>
-
-        <div className="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-black shadow-inner flex items-center gap-2">
-          <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
-          {formatTime(timeLeft)}
         </div>
 
         <div className="flex gap-1.5">
