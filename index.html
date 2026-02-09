@@ -147,6 +147,8 @@
             nineBoxMinutes: 5
         };
 
+        const TIMER_META_ID = '__TIMERS__';
+
         let state = {
             view: 'LOGIN',
             team: JSON.parse(localStorage.getItem('team_data')) || null,
@@ -154,6 +156,7 @@
             isRubricOpen: false,
             pendingTimerStart: null,
             adminTimerExt: { teamName: 'ALL', target: 'performance', roundIndex: 1 },
+            registryPollId: null,
             evaluations: { k: null, s: null, a: null },
             isSubmitted: false,
             result: null,
@@ -185,6 +188,22 @@
 
         if (state.team) state.team = normalizeTeam(state.team);
 
+        function getTimersFromMeta(team) {
+            const completedProfiles = Array.isArray(team?.completedProfiles) ? team.completedProfiles : [];
+            const meta = completedProfiles.find((cp) => typeof cp === 'object' && cp && cp.id === TIMER_META_ID);
+            if (!meta || typeof meta !== 'object') return null;
+            const timers = meta.timers;
+            return timers && typeof timers === 'object' ? timers : null;
+        }
+
+        function upsertTimerMeta(team) {
+            if (!team) return;
+            const completedProfiles = Array.isArray(team.completedProfiles) ? team.completedProfiles : [];
+            const withoutMeta = completedProfiles.filter((cp) => !(typeof cp === 'object' && cp && cp.id === TIMER_META_ID));
+            const meta = { id: TIMER_META_ID, timers: team.timers };
+            team.completedProfiles = [meta, ...withoutMeta];
+        }
+
         function normalizeTeam(team) {
             if (!team) return team;
             if (!Array.isArray(team.completedProfiles)) team.completedProfiles = [];
@@ -194,6 +213,27 @@
             if (!team.timers.performanceRounds || typeof team.timers.performanceRounds !== 'object') team.timers.performanceRounds = {};
             if (!team.timers.ksaRounds || typeof team.timers.ksaRounds !== 'object') team.timers.ksaRounds = {};
             if (typeof team.timers.nineBoxEndMs !== 'number') team.timers.nineBoxEndMs = null;
+
+            // If backend doesn't persist `timers`, recover from meta entry.
+            const metaTimers = getTimersFromMeta(team);
+            if (metaTimers && typeof metaTimers === 'object') {
+                team.timers = {
+                    ...(team.timers || {}),
+                    ...(metaTimers || {}),
+                    performanceRounds: {
+                        ...((team.timers && team.timers.performanceRounds) || {}),
+                        ...((metaTimers && metaTimers.performanceRounds) || {})
+                    },
+                    ksaRounds: {
+                        ...((team.timers && team.timers.ksaRounds) || {}),
+                        ...((metaTimers && metaTimers.ksaRounds) || {})
+                    },
+                    nineBoxEndMs: (typeof metaTimers.nineBoxEndMs === 'number') ? metaTimers.nineBoxEndMs : team.timers.nineBoxEndMs
+                };
+            }
+
+            // Keep meta updated so API persistence works.
+            upsertTimerMeta(team);
             return team;
         }
 
@@ -226,10 +266,12 @@
                     ? normalizedIncoming.timers.nineBoxEndMs
                     : ((normalizedBase?.timers && typeof normalizedBase.timers.nineBoxEndMs === 'number') ? normalizedBase.timers.nineBoxEndMs : null)
             };
+
+            upsertTimerMeta(normalizedIncoming);
             return normalizedIncoming;
         }
 
-        async function fetchRegistry() {
+        async function fetchRegistry(silent = false) {
             try {
                 // Add cache-busting to avoid stale GET responses from proxies or CDNs
                 const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
@@ -246,8 +288,17 @@
                 if (cfg && cfg.completedProfiles && cfg.completedProfiles[0]) {
                     state.config = JSON.parse(cfg.completedProfiles[0]);
                 }
-                // Update UI when registry changes
-                render();
+
+                // Keep local team in sync (timers, coins, etc.) so admin changes reflect immediately.
+                if (state.team && state.team.name) {
+                    const updatedSelf = state.registry.find(t => t.name === state.team.name);
+                    if (updatedSelf) {
+                        state.team = mergeTeamData(state.team, updatedSelf);
+                        localStorage.setItem('team_data', JSON.stringify(state.team));
+                    }
+                }
+
+                if (!silent) render();
                 return state.registry;
             } catch (err) {
                 console.error("Fetch Registry Error:", err);
@@ -374,7 +425,7 @@
                     state.isNineBoxSubmitted = false;
                 }
             }
-            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry().then(() => render()); }
+            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true).then(() => render()); }
             render();
             window.scrollTo(0, 0);
         }
@@ -398,6 +449,23 @@
             renderCoinPopup();
             renderSyncStatus();
             ensureTimerTick();
+            ensureRegistryPolling();
+        }
+
+        function ensureRegistryPolling() {
+            const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
+            if (!isParticipant) {
+                if (state.registryPollId) {
+                    clearInterval(state.registryPollId);
+                    state.registryPollId = null;
+                }
+                return;
+            }
+            if (state.registryPollId) return;
+            // Poll to pick up admin timer extensions / config changes without requiring relog.
+            state.registryPollId = setInterval(() => {
+                fetchRegistry(true);
+            }, 5000);
         }
 
         function renderSyncStatus() {
@@ -503,7 +571,10 @@
                         <button onclick="navigate('LANDING')" class="p-2 hover:bg-slate-800 rounded-full transition-all"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                         <h1 class="font-black text-xl tracking-tighter uppercase">Admin Panel</h1>
                     </div>
-                    <div id="sync-indicator"></div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="fetchRegistry()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 font-black text-[10px] uppercase tracking-widest">Update</button>
+                        <div id="sync-indicator"></div>
+                    </div>
                 </header>
                 <div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -572,7 +643,7 @@
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     ${teams.map(t => {
-                                        const profiles = Array.isArray(t.completedProfiles) ? t.completedProfiles : [];
+                                        const profiles = (Array.isArray(t.completedProfiles) ? t.completedProfiles : []).filter((cp) => !(typeof cp === 'object' && cp && cp.id === TIMER_META_ID));
                                         const completedPerformance = Array.isArray(t.completedPerformanceProfiles) ? t.completedPerformanceProfiles : [];
                                         const completedNineBox = t.completedNineBox ? 1 : 0;
                                         const activityCount = [completedPerformance.length > 0, completedNineBox > 0, profiles.length > 0].filter(Boolean).length;
@@ -790,6 +861,7 @@
             if (existingEnd) return existingEnd;
             const endMs = Date.now() + minutes * 60 * 1000;
             setTeamRoundEndMs(state.team, activity, roundIndex, endMs);
+            upsertTimerMeta(state.team);
             save();
             return endMs;
         }
@@ -800,6 +872,7 @@
             if (typeof t.timers.nineBoxEndMs === 'number' && t.timers.nineBoxEndMs) return t.timers.nineBoxEndMs;
             const endMs = Date.now() + TIMER_CONFIG.nineBoxMinutes * 60 * 1000;
             t.timers.nineBoxEndMs = endMs;
+            upsertTimerMeta(t);
             save();
             return endMs;
         }
@@ -1637,6 +1710,7 @@
                 const next = extendTimerEndMs(existing, 60 * 1000);
                 setTeamRoundEndMs(updated, spec.target, roundIndex, next);
             }
+            upsertTimerMeta(updated);
             return pushTeamUpdate(updated);
         }
 
