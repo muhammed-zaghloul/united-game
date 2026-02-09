@@ -16,20 +16,18 @@ This document covers how to publish this project to GitHub and basic CI/deployme
 - Add `.env.local` to `.gitignore` so it is never accidentally committed.
 
 ## 4) GitHub Pages / base settings for static hosting 📦
-- Vite's default build output is the `dist` folder. To publish to GitHub Pages for a repo hosted at `https://<username>.github.io/<repo-name>/`, you must set the `base` option in `vite.config.ts`:
-
-  ```js
-  // vite.config.ts
-  export default defineConfig({
-    base: '/<repo-name>/',
-    // ...other options
-  })
-  ```
+- Vite's default build output is the `dist` folder.
+- This repo is configured with `base: './'` in `vite.config.ts`, which works on GitHub Pages project sites (served from `https://<username>.github.io/<repo-name>/`).
 
 - Alternatively, some people set `homepage` in `package.json` (primarily for Create React App). For Vite, prefer `base` in `vite.config.ts`.
 - To deploy to GitHub Pages you can:
   - Use the `gh-pages` npm package to publish the `dist` folder to the `gh-pages` branch, or
   - Use an Action such as `peaceiris/actions-gh-pages` to automatically publish on push to `main`/on tag.
+
+## 4.1) Automatic GitHub Pages deployment ✅
+- This repository includes a GitHub Actions workflow at `.github/workflows/deploy-pages.yml`.
+- It builds the project and deploys `dist` to GitHub Pages when you push to `main` (and also supports manual runs via "Run workflow").
+- In GitHub: Settings → Pages → set Source to "GitHub Actions".
 
 ## 5) Example: add `GEMINI_API_KEY` for CI
 - Add `GEMINI_API_KEY` in the repository Secrets (Settings → Secrets → Actions).

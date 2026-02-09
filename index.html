@@ -80,7 +80,7 @@
         ];
 
         const PROFILES = [
-            { id: "omar", name: "Omar", avatar: "img/omar-avatar.png", job: "Senior Pharmacist", age: 28, exp: "4 Years", traits: [
+            { id: "omar", name: "Omar", avatar: "img/omar-avatar.png", job: "Branch Manager", age: 28, exp: "4 Years", traits: [
                 "Very good knowledge of the retail KPIs, market dynamics, and financial management.",
                 "His manager feedback that he needs to focus on building a more collaborative and engaging team environment.",
                 "Manager feedback notes that he believes using manager’s authority is important to ensure seamless operations.",
@@ -137,23 +137,23 @@
             ], answers: { k: 2, s: 4, a: 2 }, performancePotential: { performance: 2, potential: 2 } }
         ];
 
-        // Timers removed for all activities. Clear any legacy stored timers so
-        // previous sessions don't keep showing "Time Up".
-        try {
-            localStorage.removeItem('perf_round_timers');
-            localStorage.removeItem('ksa_round_timers');
-            localStorage.removeItem('nine_box_timer_end');
-        } catch (err) {}
-
-        const storedPerfTimers = {};
-        const storedKsaTimers = {};
-        const storedNineBoxTimer = null;
+        // --- TIMER CONFIG ---
+        // Activity 1 (Performance): Trial=0, First=5, Second=5
+        // Activity 3 (KSA): Trial=0, First=8, Second=10
+        // Activity 2 (9-Box): total=5
+        const TIMER_CONFIG = {
+            performanceRounds: [0, 5, 5],
+            ksaRounds: [0, 8, 10],
+            nineBoxMinutes: 5
+        };
 
         let state = {
             view: 'LOGIN',
             team: JSON.parse(localStorage.getItem('team_data')) || null,
             selectedProfile: null,
             isRubricOpen: false,
+            pendingTimerStart: null,
+            adminTimerExt: { teamName: 'ALL', target: 'performance', roundIndex: 1 },
             evaluations: { k: null, s: null, a: null },
             isSubmitted: false,
             result: null,
@@ -162,10 +162,8 @@
             performanceResult: null,
             performanceRoundIndex: null,
             ksaRoundIndex: null,
-            performanceRoundTimers: storedPerfTimers,
-            ksaRoundTimers: storedKsaTimers,
-            nineBoxTimerEnd: storedNineBoxTimer,
             timerId: null,
+            timerStatusCache: { performance: null, ksa: null, ninebox: null },
             nineBoxPlacements: {},
             isNineBoxSubmitted: false,
             draggingProfileId: null,
@@ -192,6 +190,10 @@
             if (!Array.isArray(team.completedProfiles)) team.completedProfiles = [];
             if (!Array.isArray(team.completedPerformanceProfiles)) team.completedPerformanceProfiles = [];
             if (!team.completedNineBox) team.completedNineBox = null;
+            if (!team.timers || typeof team.timers !== 'object') team.timers = {};
+            if (!team.timers.performanceRounds || typeof team.timers.performanceRounds !== 'object') team.timers.performanceRounds = {};
+            if (!team.timers.ksaRounds || typeof team.timers.ksaRounds !== 'object') team.timers.ksaRounds = {};
+            if (typeof team.timers.nineBoxEndMs !== 'number') team.timers.nineBoxEndMs = null;
             return team;
         }
 
@@ -208,6 +210,22 @@
             if (!normalizedIncoming.completedNineBox && normalizedBase?.completedNineBox) {
                 normalizedIncoming.completedNineBox = normalizedBase.completedNineBox;
             }
+            // Merge timers conservatively so we don't drop local timer state on partial updates.
+            normalizedIncoming.timers = {
+                ...(normalizedBase?.timers || {}),
+                ...(normalizedIncoming?.timers || {}),
+                performanceRounds: {
+                    ...((normalizedBase?.timers && normalizedBase.timers.performanceRounds) || {}),
+                    ...((normalizedIncoming?.timers && normalizedIncoming.timers.performanceRounds) || {})
+                },
+                ksaRounds: {
+                    ...((normalizedBase?.timers && normalizedBase.timers.ksaRounds) || {}),
+                    ...((normalizedIncoming?.timers && normalizedIncoming.timers.ksaRounds) || {})
+                },
+                nineBoxEndMs: (normalizedIncoming?.timers && typeof normalizedIncoming.timers.nineBoxEndMs === 'number')
+                    ? normalizedIncoming.timers.nineBoxEndMs
+                    : ((normalizedBase?.timers && typeof normalizedBase.timers.nineBoxEndMs === 'number') ? normalizedBase.timers.nineBoxEndMs : null)
+            };
             return normalizedIncoming;
         }
 
@@ -252,7 +270,7 @@
                 console.debug('apiCall result:', result);
                 if (result && result.success) {
                     // Prefer registry from response, but fallback to refetch if absent
-                    if (Array.isArray(result.registry)) state.registry = result.registry;
+                    if (Array.isArray(result.registry)) state.registry = result.registry.map((t) => normalizeTeam(t));
                     if (state.team) {
                         const updatedSelf = state.registry.find(t => t.name === (payload.team.newName || payload.team.name));
                         if (updatedSelf) {
@@ -275,7 +293,19 @@
         }
 
         async function pushTeamUpdate(team, action = 'upsert') {
-            return apiCall({ action, team: { name: team.name, role: team.role, goldCoins: team.goldCoins, silverCoins: team.silverCoins, completedProfiles: team.completedProfiles, completedPerformanceProfiles: team.completedPerformanceProfiles, completedNineBox: team.completedNineBox } });
+            return apiCall({
+                action,
+                team: {
+                    name: team.name,
+                    role: team.role,
+                    goldCoins: team.goldCoins,
+                    silverCoins: team.silverCoins,
+                    completedProfiles: team.completedProfiles,
+                    completedPerformanceProfiles: team.completedPerformanceProfiles,
+                    completedNineBox: team.completedNineBox,
+                    timers: team.timers
+                }
+            });
         }
 
         function save() {
@@ -294,7 +324,7 @@
             if (view === 'PROFILE_SELECTION') {
                 if (state.ksaRoundIndex === null) {
                     const completedIds = getCompletedIds(state.team?.completedProfiles || []);
-                    state.ksaRoundIndex = getActiveRoundIndex(completedIds);
+                    state.ksaRoundIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
                 }
                 state.isSubmitted = false;
                 state.evaluations = { k: null, s: null, a: null };
@@ -317,7 +347,7 @@
             if (view === 'PERFORMANCE_SELECTION') {
                 if (state.performanceRoundIndex === null) {
                     const completedIds = getCompletedIds(state.team?.completedPerformanceProfiles || []);
-                    state.performanceRoundIndex = getActiveRoundIndex(completedIds);
+                    state.performanceRoundIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
                 }
                 state.isPerformanceSubmitted = false;
                 state.performanceEvaluations = { performance: null, potential: null };
@@ -367,6 +397,7 @@
             renderModal();
             renderCoinPopup();
             renderSyncStatus();
+            ensureTimerTick();
         }
 
         function renderSyncStatus() {
@@ -425,7 +456,7 @@
                             <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
                             <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
                         </button>
-                        <button onclick="${state.config.activity2 ? "navigate('NINE_BOX')" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
+                        <button onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
                             <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
                             <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
                         </button>
@@ -445,6 +476,27 @@
 
         function renderAdminDashboard() {
             const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
+            const timerTargets = [
+                { key: 'performance', label: 'Activity 1 (Performance)' },
+                { key: 'ninebox', label: 'Activity 2 (9-Box)' },
+                { key: 'ksa', label: 'Activity 3 (KSA)' }
+            ];
+
+            const target = state.adminTimerExt?.target || 'performance';
+            const roundOptions = target === 'performance'
+                ? [
+                    { value: 0, label: 'Trial Round' },
+                    { value: 1, label: 'First Round' },
+                    { value: 2, label: 'Second Round' }
+                ]
+                : target === 'ksa'
+                    ? [
+                        { value: 0, label: 'Trial Round' },
+                        { value: 1, label: 'First Round' },
+                        { value: 2, label: 'Second Round' }
+                    ]
+                    : [];
+
             return `<div class="min-h-screen bg-slate-100 pb-20">
                 <header class="bg-slate-900 text-white p-4 sm:p-6 sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
                     <div class="flex items-center gap-4">
@@ -470,6 +522,35 @@
                                     <span class="font-black text-sm uppercase">Activity 3: Evaluating KSA</span>
                                     <div class="w-10 h-5 bg-slate-200 rounded-full relative"><div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-all ${state.config.activity3 ? 'translate-x-5 bg-sky-600' : ''}"></div></div>
                                 </button>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100 space-y-4">
+                                <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Add Time (+1 Minute)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Team</label>
+                                        <select onchange="setAdminTimerExt('teamName', this.value)" class="w-full px-4 py-3 rounded-2xl border-2 bg-slate-50 font-black text-sm">
+                                            <option value="ALL" ${state.adminTimerExt.teamName === 'ALL' ? 'selected' : ''}>All Teams</option>
+                                            ${teams.map(t => `<option value="${t.name}" ${state.adminTimerExt.teamName === t.name ? 'selected' : ''}>${t.name}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Activity</label>
+                                        <select onchange="setAdminTimerExt('target', this.value)" class="w-full px-4 py-3 rounded-2xl border-2 bg-slate-50 font-black text-sm">
+                                            ${timerTargets.map(tt => `<option value="${tt.key}" ${(state.adminTimerExt.target || 'performance') === tt.key ? 'selected' : ''}>${tt.label}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2 ${target === 'ninebox' ? 'sm:col-span-2' : ''}">
+                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round</label>
+                                        ${target === 'ninebox'
+                                            ? `<div class="w-full px-4 py-3 rounded-2xl border-2 bg-slate-50 font-black text-sm text-slate-700">Overall Timer</div>`
+                                            : `<select onchange="setAdminTimerExt('roundIndex', this.value)" class="w-full px-4 py-3 rounded-2xl border-2 bg-slate-50 font-black text-sm">
+                                                ${roundOptions.map(ro => `<option value="${ro.value}" ${Number(state.adminTimerExt.roundIndex) === ro.value ? 'selected' : ''}>${ro.label}</option>`).join('')}
+                                            </select>`
+                                        }
+                                    </div>
+                                </div>
+                                <button onclick="adminApplyTimerExtension()" class="w-full p-4 rounded-2xl border-2 bg-amber-50 border-amber-200 text-amber-800 font-black text-sm uppercase">Add +1 Minute</button>
                             </div>
                         </div>
                         <div class="bg-white p-5 sm:p-8 rounded-[2.5rem] shadow-xl space-y-6">
@@ -531,22 +612,24 @@
         function renderPerformanceSelection() {
             const completed = state.team.completedPerformanceProfiles || [];
             const completedIds = getCompletedIds(completed);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
             const roundIndex = state.performanceRoundIndex !== null ? state.performanceRoundIndex : activeIndex;
-            const round = PROFILE_ROUNDS[roundIndex];
-            const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
+            const round = PERFORMANCE_ROUNDS[roundIndex];
+            const roundProfiles = round.ids.map((id) => PROFILES.find((p) => p.id === id)).filter(Boolean);
+            const timerText = getRoundTimerText('performance', roundIndex);
             return `<div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Performance & Potential</h1>
                     <div class="flex items-center gap-2">
+                        ${renderTimerPill('timer-performance', timerText)}
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-black text-slate-800">${round.label}</h2>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${PROFILE_ROUNDS.length}</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${PERFORMANCE_ROUNDS.length}</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
@@ -569,7 +652,7 @@
 
         function renderPerformanceRounds() {
             const completedIds = getCompletedIds(state.team?.completedPerformanceProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
             return `<div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
@@ -580,7 +663,7 @@
                     <div class="text-center">
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 1</span>
                     </div>
-                    ${PROFILE_ROUNDS.map((round, idx) => {
+                    ${PERFORMANCE_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
                         return `<button onclick="${isActive ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
@@ -593,22 +676,24 @@
         function renderProfileSelection() {
             const completed = state.team.completedProfiles || [];
             const completedIds = getCompletedIds(completed);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
             const roundIndex = state.ksaRoundIndex !== null ? state.ksaRoundIndex : activeIndex;
-            const round = PROFILE_ROUNDS[roundIndex];
-            const roundProfiles = PROFILES.filter(p => round.ids.includes(p.id));
+            const round = KSA_ROUNDS[roundIndex];
+            const roundProfiles = round.ids.map((id) => PROFILES.find((p) => p.id === id)).filter(Boolean);
+            const timerText = getRoundTimerText('ksa', roundIndex);
             return `<div class="min-h-screen bg-slate-50 pb-28">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('KSA_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Profile</h1>
                     <div class="flex items-center gap-2">
+                        ${renderTimerPill('timer-ksa', timerText)}
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto">
                     <div class="mb-4 flex items-center justify-between">
                         <h2 class="text-lg font-black text-slate-800">${round.label}</h2>
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${PROFILE_ROUNDS.length}</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round ${roundIndex + 1} of ${KSA_ROUNDS.length}</span>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
@@ -631,7 +716,7 @@
 
         function renderKsaRounds() {
             const completedIds = getCompletedIds(state.team?.completedProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
             return `<div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
@@ -642,7 +727,7 @@
                     <div class="text-center">
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 3</span>
                     </div>
-                    ${PROFILE_ROUNDS.map((round, idx) => {
+                    ${KSA_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
                         return `<button onclick="${isActive ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
@@ -662,25 +747,61 @@
             return state.team.completedProfiles.find(cp => (typeof cp === 'string' ? cp === profileId : cp.id === profileId)) || null;
         }
 
-        const PROFILE_ROUNDS = [
-            { label: 'Trial', ids: ['fahd'] },
-            { label: 'Round 1', ids: ['hossam', 'youseff'] },
-            { label: 'Round 2', ids: ['omar', 'ali', 'faisal'] }
+        // Activity 1 (Performance & Potential)
+        const PERFORMANCE_ROUNDS = [
+            { label: 'Trial Round', ids: ['fahd'] },
+            { label: 'First Round', ids: ['hossam', 'youseff'] },
+            { label: 'Second Round', ids: ['ali', 'omar', 'faisal'] }
+        ];
+
+        // Activity 3 (KSA)
+        const KSA_ROUNDS = [
+            { label: 'Trial Round', ids: ['fahd'] },
+            { label: 'First Round', ids: ['faisal', 'ali'] },
+            { label: 'Second Round', ids: ['hossam', 'omar', 'youseff'] }
         ];
 
         function getRoundDurationMinutes(activity, roundIndex) {
-            // Timers removed
+            const idx = typeof roundIndex === 'number' ? roundIndex : 0;
+            if (activity === 'performance') return TIMER_CONFIG.performanceRounds[idx] || 0;
+            if (activity === 'ksa') return TIMER_CONFIG.ksaRounds[idx] || 0;
             return 0;
         }
 
-        function ensureRoundTimer(activity, roundIndex) {
-            // Timers removed
+        function getTeamRoundEndMs(team, activity, roundIndex) {
+            const t = normalizeTeam(team);
+            const key = String(roundIndex);
+            if (activity === 'performance') return typeof t.timers.performanceRounds[key] === 'number' ? t.timers.performanceRounds[key] : null;
+            if (activity === 'ksa') return typeof t.timers.ksaRounds[key] === 'number' ? t.timers.ksaRounds[key] : null;
             return null;
         }
 
+        function setTeamRoundEndMs(team, activity, roundIndex, endMs) {
+            const t = normalizeTeam(team);
+            const key = String(roundIndex);
+            if (activity === 'performance') t.timers.performanceRounds[key] = endMs;
+            if (activity === 'ksa') t.timers.ksaRounds[key] = endMs;
+        }
+
+        function ensureRoundTimer(activity, roundIndex) {
+            const minutes = getRoundDurationMinutes(activity, roundIndex);
+            if (!state.team || minutes <= 0) return null;
+            const existingEnd = getTeamRoundEndMs(state.team, activity, roundIndex);
+            if (existingEnd) return existingEnd;
+            const endMs = Date.now() + minutes * 60 * 1000;
+            setTeamRoundEndMs(state.team, activity, roundIndex, endMs);
+            save();
+            return endMs;
+        }
+
         function ensureNineBoxTimer() {
-            // Timers removed
-            return null;
+            if (!state.team || TIMER_CONFIG.nineBoxMinutes <= 0) return null;
+            const t = normalizeTeam(state.team);
+            if (typeof t.timers.nineBoxEndMs === 'number' && t.timers.nineBoxEndMs) return t.timers.nineBoxEndMs;
+            const endMs = Date.now() + TIMER_CONFIG.nineBoxMinutes * 60 * 1000;
+            t.timers.nineBoxEndMs = endMs;
+            save();
+            return endMs;
         }
 
         function getTimeLeftSeconds(endMs) {
@@ -696,45 +817,149 @@
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
+        function getRoundTimerText(activity, roundIndex) {
+            const minutes = getRoundDurationMinutes(activity, roundIndex);
+            if (minutes <= 0) return '';
+            const endMs = getTeamRoundEndMs(state.team, activity, roundIndex);
+            if (!endMs) return 'Not started';
+            const left = getTimeLeftSeconds(endMs);
+            if (left <= 0) return 'Time Up';
+            return formatTimer(left);
+        }
+
+        function getNineBoxTimerText() {
+            if (TIMER_CONFIG.nineBoxMinutes <= 0) return '';
+            const endMs = state.team?.timers?.nineBoxEndMs || null;
+            if (!endMs) return 'Not started';
+            const left = getTimeLeftSeconds(endMs);
+            if (left <= 0) return 'Time Up';
+            return formatTimer(left);
+        }
+
         function updateTimerDisplays() {
-            // Timers removed
+            if (!state.team || state.team.role !== 'PARTICIPANT') return;
+
+            const perfIdx = getCurrentPerformanceRoundIndex();
+            const ksaIdx = getCurrentKsaRoundIndex();
+
+            const perfElIds = ['timer-performance', 'timer-performance-eval'];
+            const ksaElIds = ['timer-ksa', 'timer-ksa-eval'];
+            const nineElIds = ['timer-ninebox'];
+
+            const perfText = getRoundTimerText('performance', perfIdx);
+            const ksaText = getRoundTimerText('ksa', ksaIdx);
+            const nineText = getNineBoxTimerText();
+
+            perfElIds.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = perfText;
+            });
+            ksaElIds.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = ksaText;
+            });
+            nineElIds.forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = nineText;
+            });
+
+            const newStatus = {
+                performance: getRoundDurationMinutes('performance', perfIdx) > 0 ? (isRoundTimeUp('performance') ? 'up' : 'running') : 'none',
+                ksa: getRoundDurationMinutes('ksa', ksaIdx) > 0 ? (isRoundTimeUp('ksa') ? 'up' : 'running') : 'none',
+                ninebox: TIMER_CONFIG.nineBoxMinutes > 0 ? (isNineBoxTimeUp() ? 'up' : 'running') : 'none'
+            };
+
+            if (state.timerStatusCache.performance !== newStatus.performance || state.timerStatusCache.ksa !== newStatus.ksa || state.timerStatusCache.ninebox !== newStatus.ninebox) {
+                state.timerStatusCache = newStatus;
+                render();
+            }
         }
 
         function hasActiveTimers() {
-            // Timers removed
-            return false;
+            if (!state.team || state.team.role !== 'PARTICIPANT') return false;
+            const t = normalizeTeam(state.team);
+            const now = Date.now();
+            const perfActive = Object.values(t.timers.performanceRounds || {}).some((v) => typeof v === 'number' && v > now);
+            const ksaActive = Object.values(t.timers.ksaRounds || {}).some((v) => typeof v === 'number' && v > now);
+            const nineActive = typeof t.timers.nineBoxEndMs === 'number' && t.timers.nineBoxEndMs > now;
+            return perfActive || ksaActive || nineActive;
         }
 
         function ensureTimerTick() {
-            // Timers removed
-            return;
+            if (state.timerId && !hasActiveTimers()) {
+                clearInterval(state.timerId);
+                state.timerId = null;
+                return;
+            }
+            if (state.timerId) return;
+            if (!hasActiveTimers()) return;
+            state.timerId = setInterval(() => {
+                updateTimerDisplays();
+                if (!hasActiveTimers()) {
+                    clearInterval(state.timerId);
+                    state.timerId = null;
+                }
+            }, 1000);
         }
 
         function getCurrentPerformanceRoundIndex() {
             const completedIds = getCompletedIds(state.team?.completedPerformanceProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
             return state.performanceRoundIndex !== null ? state.performanceRoundIndex : activeIndex;
         }
 
         function getCurrentKsaRoundIndex() {
             const completedIds = getCompletedIds(state.team?.completedProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds);
+            const activeIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
             return state.ksaRoundIndex !== null ? state.ksaRoundIndex : activeIndex;
         }
 
         function getRoundTimeLeftSeconds(activity) {
-            // Timers removed
+            if (!state.team) return null;
+            if (activity === 'performance') {
+                const idx = getCurrentPerformanceRoundIndex();
+                if (getRoundDurationMinutes('performance', idx) <= 0) return null;
+                const endMs = getTeamRoundEndMs(state.team, 'performance', idx);
+                if (!endMs) return null;
+                return getTimeLeftSeconds(endMs);
+            }
+            if (activity === 'ksa') {
+                const idx = getCurrentKsaRoundIndex();
+                if (getRoundDurationMinutes('ksa', idx) <= 0) return null;
+                const endMs = getTeamRoundEndMs(state.team, 'ksa', idx);
+                if (!endMs) return null;
+                return getTimeLeftSeconds(endMs);
+            }
             return null;
         }
 
         function isRoundTimeUp(activity) {
-            // Timers removed
+            if (!state.team) return false;
+            if (activity === 'performance') {
+                const idx = getCurrentPerformanceRoundIndex();
+                if (getRoundDurationMinutes('performance', idx) <= 0) return false;
+                const endMs = getTeamRoundEndMs(state.team, 'performance', idx);
+                return Boolean(endMs && Date.now() >= endMs);
+            }
+            if (activity === 'ksa') {
+                const idx = getCurrentKsaRoundIndex();
+                if (getRoundDurationMinutes('ksa', idx) <= 0) return false;
+                const endMs = getTeamRoundEndMs(state.team, 'ksa', idx);
+                return Boolean(endMs && Date.now() >= endMs);
+            }
             return false;
         }
 
         function isNineBoxTimeUp() {
-            // Timers removed
-            return false;
+            const endMs = state.team?.timers?.nineBoxEndMs || null;
+            if (!endMs || TIMER_CONFIG.nineBoxMinutes <= 0) return false;
+            return Date.now() >= endMs;
+        }
+
+        function renderTimerPill(id, text) {
+            if (!text) return '';
+            const isUp = text === 'Time Up';
+            return `<div class="px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${isUp ? 'bg-red-50 border-red-200 text-red-700' : text === 'Not started' ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}"><span id="${id}">${text}</span></div>`;
         }
 
         function getCompletedIds(list) {
@@ -742,13 +967,14 @@
             return list.map((entry) => (typeof entry === 'string' ? entry : entry.id));
         }
 
-        function getActiveRoundIndex(completedIds) {
-            for (let i = 0; i < PROFILE_ROUNDS.length; i += 1) {
-                const round = PROFILE_ROUNDS[i];
+        function getActiveRoundIndex(completedIds, rounds) {
+            const roundList = Array.isArray(rounds) ? rounds : [];
+            for (let i = 0; i < roundList.length; i += 1) {
+                const round = roundList[i];
                 const allDone = round.ids.every((id) => completedIds.includes(id));
                 if (!allDone) return i;
             }
-            return PROFILE_ROUNDS.length - 1;
+            return Math.max(0, roundList.length - 1);
         }
 
         function getNineBoxCells() {
@@ -767,11 +993,14 @@
 
         function renderPerformanceEvaluation() {
             const p = state.selectedProfile;
+            const timeUp = isRoundTimeUp('performance');
+            const roundIndex = getCurrentPerformanceRoundIndex();
             return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PERFORMANCE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('PERFORMANCE')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
                     <div class="flex flex-wrap gap-2 items-center">
+                        ${renderTimerPill('timer-performance-eval', getRoundTimerText('performance', roundIndex))}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -787,9 +1016,6 @@
                         <div class="bg-slate-800 text-white py-6 text-center font-black text-xl sm:text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
                             <div class="flex justify-center"><img src="${p.avatar}" class="w-32 h-32 sm:w-44 sm:h-44 rounded-full border-[8px] sm:border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
-                            <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
-                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
-                            </div>
                         </div>
                     </div>
                     <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
@@ -797,13 +1023,14 @@
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'performance' ? 'Performance' : 'Potential'}</p>
                             <div class="grid grid-cols-3 gap-2.5">${[1, 2, 3].map(v => `<button onclick="handlePerformanceScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
-                        <button data-submit="performance" onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : 'Submit Review'}</button>
+                        <button data-submit="performance" ${!state.isPerformanceSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
                 </main>
             </div>`;
         }
 
         function renderNineBox() {
+            const timeUp = isNineBoxTimeUp();
             const savedNineBox = state.team?.completedNineBox || null;
             const placements = state.isNineBoxSubmitted && savedNineBox?.placementsCorrected ? savedNineBox.placementsCorrected : (state.nineBoxPlacements || {});
             const feedback = state.isNineBoxSubmitted && savedNineBox?.feedback ? savedNineBox.feedback : {};
@@ -817,6 +1044,7 @@
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">9-Box Grid</h1>
                     <div class="flex flex-wrap gap-2 items-center">
+                        ${renderTimerPill('timer-ninebox', getNineBoxTimerText())}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -837,7 +1065,7 @@
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
                             ${labels.map(item => {
                                 const isPlaced = Boolean(placements[item.key]);
-                                return `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${item.key}')" ondragend="handleDragEnd()" class="${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
+                                return `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" ondragstart="handleDragStart('${item.key}')" ondragend="handleDragEnd()" class="${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
                                     ${item.label}
                                 </div>`;
                             }).join('')}
@@ -863,7 +1091,7 @@
                                     const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
                                     return `<div ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" class="${cell.tone} ${cell.text} rounded-2xl h-28 p-3 font-black text-xs flex flex-col justify-between border-2 border-white/60">
                                         <div class="opacity-90"></div>
-                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted ? 'false' : 'true'}" ondragstart="handleDragStart('${occupant.key}')" ondragend="handleDragEnd()" class="bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
+                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" ondragstart="handleDragStart('${occupant.key}')" ondragend="handleDragEnd()" class="bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
                                             ${occupant.label}
                                         </div>` : '<div class="h-10"></div>'}
                                     </div>`;
@@ -883,7 +1111,7 @@
                     </section>
 
                     <section class="pt-2">
-                        <button data-submit="nine" ${!state.isNineBoxSubmitted && (!canSubmit) ? 'disabled' : ''} onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">${state.isNineBoxSubmitted ? 'Back to Dashboard' : 'Submit Grid'}</button>
+                        <button data-submit="nine" ${!state.isNineBoxSubmitted && (!canSubmit || timeUp) ? 'disabled' : ''} onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">${state.isNineBoxSubmitted ? 'Back to Dashboard' : timeUp ? 'Time Up' : 'Submit Grid'}</button>
                         ${!state.isNineBoxSubmitted ? `<p class="text-center text-[10px] font-bold text-slate-400 mt-2">${placedKeys.length} / ${labels.length} placed</p>` : ''}
                     </section>
                 </main>
@@ -892,11 +1120,14 @@
 
         function renderEvaluation() {
             const p = state.selectedProfile;
+            const timeUp = isRoundTimeUp('ksa');
+            const roundIndex = getCurrentKsaRoundIndex();
             return `<div class="min-h-screen bg-slate-50 pb-32">
                 <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
                     <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
                     <button onclick="toggleRubric('KSA')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
                     <div class="flex flex-wrap gap-2 items-center">
+                        ${renderTimerPill('timer-ksa-eval', getRoundTimerText('ksa', roundIndex))}
                         <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
                             <span>${state.team.goldCoins}</span>
@@ -912,9 +1143,6 @@
                         <div class="bg-slate-800 text-white py-6 text-center font-black text-xl sm:text-2xl tracking-tight">${p.name}</div>
                         <div class="p-8 space-y-8">
                             <div class="flex justify-center"><img src="${p.avatar}" class="w-32 h-32 sm:w-44 sm:h-44 rounded-full border-[8px] sm:border-[12px] border-white shadow-2xl bg-slate-50 object-cover aspect-square" onerror="this.src='img/default-avatar.png'"></div>
-                            <div class="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
-                                ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
-                            </div>
                         </div>
                     </div>
                     <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
@@ -922,7 +1150,7 @@
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
                             <div class="grid grid-cols-5 max-[420px]:grid-cols-3 gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
-                        <button data-submit="ksa" onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : 'Submit Review'}</button>
+                        <button data-submit="ksa" ${!state.isSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
                 </main>
             </div>`;
@@ -931,10 +1159,11 @@
         function getButtonStyles(cat, val) {
             const userVal = state.evaluations[cat];
             const correctVal = state.selectedProfile.answers[cat];
+            if (!state.isSubmitted && isRoundTimeUp('ksa')) return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             if (state.isSubmitted) {
-                if (val === correctVal) return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 scale-105 shadow-inner ring-4 ring-green-50";
-                if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
-                return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100";
+                if (val === correctVal) return "relative z-10 bg-green-500 text-white border-2 border-green-700 shadow-lg ring-4 ring-green-100";
+                if (val === userVal && val !== correctVal) return "relative z-10 bg-red-50 text-red-700 border-2 border-dotted border-red-600 shadow-inner ring-4 ring-red-50";
+                return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             }
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
             return "bg-white text-slate-500 border border-slate-200 active:bg-sky-50";
@@ -943,10 +1172,11 @@
         function getPerformanceButtonStyles(cat, val) {
             const userVal = state.performanceEvaluations[cat];
             const correctVal = state.selectedProfile.performancePotential[cat];
+            if (!state.isPerformanceSubmitted && isRoundTimeUp('performance')) return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             if (state.isPerformanceSubmitted) {
-                if (val === correctVal) return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 scale-105 shadow-inner ring-4 ring-green-50";
-                if (val === userVal && val !== correctVal) return "bg-red-500 text-white border-2 border-red-700 shadow-lg";
-                return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100";
+                if (val === correctVal) return "relative z-10 bg-green-500 text-white border-2 border-green-700 shadow-lg ring-4 ring-green-100";
+                if (val === userVal && val !== correctVal) return "relative z-10 bg-red-50 text-red-700 border-2 border-dotted border-red-600 shadow-inner ring-4 ring-red-50";
+                return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             }
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
             return "bg-white text-slate-500 border border-slate-200 active:bg-sky-50";
@@ -985,8 +1215,64 @@
 
         function renderModal() {
             const container = document.getElementById('modal-container');
-            if (!state.isRubricOpen && !state.profilePreviewId) { container.classList.add('hidden'); return; }
+            if (!state.isRubricOpen && !state.profilePreviewId && !state.pendingTimerStart) { container.classList.add('hidden'); return; }
             container.classList.remove('hidden');
+
+            if (state.pendingTimerStart) {
+                const pending = state.pendingTimerStart;
+                const isNine = pending.activity === 'ninebox';
+                const roundLabel = isNine
+                    ? 'Activity 2: 9-Box Grid'
+                    : pending.activity === 'performance'
+                        ? `Activity 1: ${PERFORMANCE_ROUNDS[pending.roundIndex]?.label || 'Round'}`
+                        : `Activity 3: ${KSA_ROUNDS[pending.roundIndex]?.label || 'Round'}`;
+                const minutes = isNine ? TIMER_CONFIG.nineBoxMinutes : getRoundDurationMinutes(pending.activity, pending.roundIndex);
+                const alreadyStarted = isNine
+                    ? Boolean(state.team?.timers?.nineBoxEndMs)
+                    : Boolean(getTeamRoundEndMs(state.team, pending.activity, pending.roundIndex));
+                const msg = minutes > 0
+                    ? (alreadyStarted ? `This timer is already running. Continue?` : `This round is timed (${minutes} min). Start the timer now?`)
+                    : `This round has no timer. Continue?`;
+                const coinRules = isNine
+                    ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
+                        <div class="text-sm font-semibold text-slate-700">+1 Silver per correct placement</div>
+                    </div>`
+                    : pending.activity === 'performance'
+                        ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
+                            <div class="text-sm font-semibold text-slate-700">Performance correct: +1 Silver</div>
+                            <div class="text-sm font-semibold text-slate-700">Potential correct: +2 Silver</div>
+                            <div class="text-sm font-semibold text-slate-700">Max per profile: 3 Silver</div>
+                        </div>`
+                        : `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
+                            <div class="text-sm font-semibold text-slate-700">+1 Silver per correct answer</div>
+                            <div class="text-sm font-semibold text-slate-700">3/3 correct: +1 Gold bonus</div>
+                        </div>`;
+                container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
+                    <div class="p-6 border-b bg-slate-50 flex items-center justify-between">
+                        <h2 class="font-black text-slate-800 uppercase tracking-tight text-lg">Start Timer</h2>
+                        <button onclick="cancelTimerStart()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">${roundLabel}</div>
+                        <p class="text-sm font-semibold text-slate-600">${msg}</p>
+                        ${minutes > 0 ? `<div class="p-4 rounded-2xl border bg-slate-50">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Duration</span>
+                                <span class="font-black text-slate-800">${minutes} min</span>
+                            </div>
+                        </div>` : ''}
+                        ${coinRules}
+                    </div>
+                    <div class="p-6 border-t bg-slate-50 grid grid-cols-2 gap-3">
+                        <button onclick="cancelTimerStart()" class="py-4 bg-white border-2 border-slate-200 rounded-[2rem] font-black uppercase tracking-widest text-slate-700 active:scale-95 transition-all">Cancel</button>
+                        <button onclick="confirmTimerStart()" class="py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">${alreadyStarted ? 'Continue' : 'Start'}</button>
+                    </div>
+                </div>`;
+                return;
+            }
             if (state.profilePreviewId) {
                 const p = PROFILES.find(profile => profile.id === state.profilePreviewId);
                 if (!p) { container.classList.add('hidden'); return; }
@@ -998,9 +1284,6 @@
                     <div class="p-6 overflow-y-auto space-y-6">
                         <div class="flex justify-center">
                             <img src="${p.avatar}" class="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover" onerror="this.src='img/default-avatar.png'" />
-                        </div>
-                        <div class="space-y-3">
-                            ${p.traits.map(t => `<div class="flex items-start gap-3 text-sm font-medium text-slate-600"><span class="mt-2 w-1.5 h-1.5 bg-sky-500 rounded-full flex-shrink-0"></span><span>${t}</span></div>`).join('')}
                         </div>
                         <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                             ${state.view === 'NINE_BOX' ? '' : `<div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Activity 3 (KSA)</div>
@@ -1039,7 +1322,13 @@
             const isSilver = state.coinPopupType === 'silver';
             const isMulti = state.coinPopupType === 'multi';
             const title = state.coinPopupDetails.title || (isMulti ? 'Results' : isGold ? 'Gold Coin!' : isSilver ? 'Silver Coin!' : 'No Coin');
-            const message = state.coinPopupDetails.message || (isMulti ? '' : isGold ? 'Perfect score earned a gold coin.' : isSilver ? 'Nice! You earned a silver coin.' : 'Try again on the next profile.');
+            const message = isMulti
+                ? (state.coinPopupDetails.message || 'Coins earned')
+                : isGold
+                    ? (state.coinPopupDetails.message || 'Coins earned: 1 Gold')
+                    : isSilver
+                        ? (state.coinPopupDetails.message || 'Coins earned: 1 Silver')
+                        : (state.coinPopupDetails.message || 'Coins earned: 0');
             const coinImg = isGold ? 'img/golden-coin.png' : isSilver ? 'img/silver-coin.png' : '';
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                 <div class="p-5 sm:p-6 border-b bg-slate-50 text-center">
@@ -1056,7 +1345,7 @@
                             <span class="font-black text-slate-500 text-lg">${state.coinPopupDetails.silver}</span>
                         </div>
                     </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>'}
-                    <p class="text-sm font-semibold text-slate-600">${message}</p>
+                    ${message ? `<p class="text-sm font-semibold text-slate-600">${message}</p>` : ''}
                 </div>
                 <div class="p-5 sm:p-6 border-t bg-slate-50"><button onclick="closeCoinPopup()" class="w-full py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Continue</button></div>
             </div>`;
@@ -1089,13 +1378,31 @@
         };
 
         window.handleLogout = () => { localStorage.removeItem('team_data'); state.team = null; navigate('LOGIN'); };
-        window.handleScore = (cat, val) => { if (state.isSubmitted) return; state.evaluations[cat] = val; render(); };
-        window.handlePerformanceScore = (cat, val) => { if (state.isPerformanceSubmitted) return; state.performanceEvaluations[cat] = val; render(); };
+        window.handleScore = (cat, val) => {
+            if (state.isSubmitted) return;
+            if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
+            state.evaluations[cat] = val;
+            render();
+        };
+        window.handlePerformanceScore = (cat, val) => {
+            if (state.isPerformanceSubmitted) return;
+            if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
+            state.performanceEvaluations[cat] = val;
+            render();
+        };
         window.toggleRubric = (type) => { state.profilePreviewId = null; state.rubricType = type || state.rubricType || 'KSA'; state.isRubricOpen = !state.isRubricOpen; render(); };
         window.closeCoinPopup = () => { state.showCoinPopup = false; render(); };
         window.openProfilePreview = (profileId) => { state.isRubricOpen = false; state.profilePreviewId = profileId; render(); };
         window.closeProfilePreview = () => { state.profilePreviewId = null; render(); };
         window.openRound = (activity, index) => {
+            const minutes = getRoundDurationMinutes(activity, index);
+            if (minutes > 0) {
+                state.pendingTimerStart = { activity, roundIndex: index };
+                state.isRubricOpen = false;
+                state.profilePreviewId = null;
+                render();
+                return;
+            }
             if (activity === 'performance') {
                 state.performanceRoundIndex = index;
                 navigate('PERFORMANCE_SELECTION');
@@ -1106,12 +1413,53 @@
                 navigate('PROFILE_SELECTION');
             }
         };
-        window.handleDragStart = (profileId) => { if (state.isNineBoxSubmitted) return; state.draggingProfileId = profileId; };
+
+        window.openNineBox = () => {
+            if (!state.team || state.team.role !== 'PARTICIPANT') return navigate('NINE_BOX');
+            if (TIMER_CONFIG.nineBoxMinutes > 0 && !state.team?.timers?.nineBoxEndMs) {
+                state.pendingTimerStart = { activity: 'ninebox' };
+                state.isRubricOpen = false;
+                state.profilePreviewId = null;
+                render();
+                return;
+            }
+            navigate('NINE_BOX');
+        };
+
+        window.cancelTimerStart = () => { state.pendingTimerStart = null; render(); };
+        window.confirmTimerStart = () => {
+            const pending = state.pendingTimerStart;
+            if (!pending) return;
+            state.pendingTimerStart = null;
+            if (pending.activity === 'ninebox') {
+                ensureNineBoxTimer();
+                navigate('NINE_BOX');
+                return;
+            }
+            if (pending.activity === 'performance') {
+                state.performanceRoundIndex = pending.roundIndex;
+                ensureRoundTimer('performance', pending.roundIndex);
+                navigate('PERFORMANCE_SELECTION');
+                return;
+            }
+            if (pending.activity === 'ksa') {
+                state.ksaRoundIndex = pending.roundIndex;
+                ensureRoundTimer('ksa', pending.roundIndex);
+                navigate('PROFILE_SELECTION');
+            }
+        };
+
+        window.handleDragStart = (profileId) => {
+            if (state.isNineBoxSubmitted) return;
+            if (isNineBoxTimeUp()) return alert('Time is up for this activity.');
+            state.draggingProfileId = profileId;
+        };
         window.handleDragEnd = () => { state.draggingProfileId = null; };
         window.handleDragOver = (event) => { event.preventDefault(); };
         window.handleDropToPool = (event) => {
             event.preventDefault();
             if (state.isNineBoxSubmitted) return;
+            if (isNineBoxTimeUp()) return alert('Time is up for this activity.');
             const key = state.draggingProfileId;
             if (key && state.nineBoxPlacements[key]) {
                 delete state.nineBoxPlacements[key];
@@ -1121,6 +1469,7 @@
         window.handleDrop = (event, performance, potential) => {
             event.preventDefault();
             if (state.isNineBoxSubmitted) return;
+            if (isNineBoxTimeUp()) return alert('Time is up for this activity.');
             const key = state.draggingProfileId;
             if (!key) return;
             const existing = Object.keys(state.nineBoxPlacements).find(id => state.nineBoxPlacements[id].performance === performance && state.nineBoxPlacements[id].potential === potential);
@@ -1129,6 +1478,7 @@
             render();
         };
         window.handleSubmitEvaluation = () => {
+            if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
             const { k, s, a } = state.evaluations;
             if (k === null || s === null || a === null) return alert("Score all 3.");
             const p = state.selectedProfile;
@@ -1153,13 +1503,14 @@
                 title: 'Activity 3 Results',
                 gold: goldEarned,
                 silver: silverEarned,
-                message: `Correct answers: ${correctCount}/3. Each correct earns 1 silver; 3/3 earns a bonus gold.`
+                message: `Gold: ${goldEarned} • Silver: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save(); render();
         };
 
         window.handleSubmitPerformance = () => {
+            if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
             const { performance, potential } = state.performanceEvaluations;
             if (performance === null || potential === null) return alert("Score both fields.");
             const p = state.selectedProfile;
@@ -1182,7 +1533,7 @@
                 title: 'Activity 1 Results',
                 gold: 0,
                 silver: silverEarned,
-                message: `Performance correct = 1 silver. Potential correct = 2 silver. Total: ${silverEarned}/3.`
+                message: `Gold: 0 • Silver: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save(); render();
@@ -1190,6 +1541,7 @@
 
         window.handleSubmitNineBox = () => {
             if (state.isNineBoxSubmitted) return;
+            if (isNineBoxTimeUp()) return alert('Time is up for this activity.');
             const cells = getNineBoxCells();
             const labels = cells.map(cell => cell.key);
             const placedKeys = Object.keys(state.nineBoxPlacements || {});
@@ -1220,7 +1572,7 @@
                 title: 'Activity 2 Results',
                 gold: goldEarned,
                 silver: silverEarned,
-                message: `Correct placements: ${correctCount}/${labels.length}. Each correct placement earns a silver coin.`
+                message: `Gold: ${goldEarned} • Silver: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save();
@@ -1252,6 +1604,62 @@
         window.adminAdjustCoins = async (name, goldDelta, silverDelta) => {
             if (!name) return;
             await apiCall({ action: 'adjustCoins', team: { name: name, goldDelta: goldDelta, silverDelta: silverDelta } });
+        };
+
+        function extendTimerEndMs(existingEndMs, addMs) {
+            const base = Math.max(typeof existingEndMs === 'number' ? existingEndMs : 0, Date.now());
+            return base + addMs;
+        }
+
+        window.setAdminTimerExt = (field, value) => {
+            if (!state.adminTimerExt) state.adminTimerExt = { teamName: 'ALL', target: 'performance', roundIndex: 1 };
+            if (field === 'roundIndex') state.adminTimerExt.roundIndex = Number(value);
+            else state.adminTimerExt[field] = value;
+
+            // Default sensible round when switching activities
+            if (field === 'target') {
+                if (value === 'ninebox') {
+                    state.adminTimerExt.roundIndex = 0;
+                } else {
+                    if (![0, 1, 2].includes(Number(state.adminTimerExt.roundIndex))) state.adminTimerExt.roundIndex = 1;
+                }
+            }
+            render();
+        };
+
+        async function applyExtensionToTeam(team, spec) {
+            const updated = normalizeTeam(JSON.parse(JSON.stringify(team)));
+            if (spec.target === 'ninebox') {
+                updated.timers.nineBoxEndMs = extendTimerEndMs(updated.timers.nineBoxEndMs, 60 * 1000);
+            } else {
+                const roundIndex = Number(spec.roundIndex);
+                const existing = getTeamRoundEndMs(updated, spec.target, roundIndex);
+                const next = extendTimerEndMs(existing, 60 * 1000);
+                setTeamRoundEndMs(updated, spec.target, roundIndex, next);
+            }
+            return pushTeamUpdate(updated);
+        }
+
+        window.adminApplyTimerExtension = async () => {
+            const spec = state.adminTimerExt || { teamName: 'ALL', target: 'performance', roundIndex: 1 };
+            const teamName = spec.teamName || 'ALL';
+            const target = spec.target || 'performance';
+            const roundIndex = Number(spec.roundIndex);
+
+            const normalizedSpec = { teamName, target, roundIndex };
+
+            if (teamName === 'ALL') {
+                const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
+                for (const t of teams) {
+                    await applyExtensionToTeam(t, normalizedSpec);
+                }
+                fetchRegistry().then(() => render());
+                return;
+            }
+
+            const team = state.registry.find(t => t.role === 'PARTICIPANT' && t.name === teamName);
+            if (!team) return;
+            if (await applyExtensionToTeam(team, normalizedSpec)) fetchRegistry().then(() => render());
         };
 
         if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');

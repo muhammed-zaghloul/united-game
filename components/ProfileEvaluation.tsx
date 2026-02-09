@@ -48,12 +48,12 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
 
     if (correctCount === 3) {
       newGold = 1;
-      setResultMessage({ text: "Perfect Score! You've earned a Gold Coin.", type: 'success' });
+      setResultMessage({ text: "Coins earned: Gold 1, Silver 0", type: 'success' });
     } else if (correctCount >= 1) {
       newSilver = 1;
-      setResultMessage({ text: `Good job! You got ${correctCount}/3 right and earned a Silver Coin.`, type: 'partial' });
+      setResultMessage({ text: "Coins earned: Gold 0, Silver 1", type: 'partial' });
     } else {
-      setResultMessage({ text: "Evaluation incorrect. No coins awarded this time.", type: 'fail' });
+      setResultMessage({ text: "Coins earned: Gold 0, Silver 0", type: 'fail' });
     }
 
     onUpdateCoins(currentProfile.id, newGold, newSilver);
@@ -73,10 +73,10 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
       const isUserChoice = userChoice === score;
 
       if (isCorrect) {
-        return "bg-green-100 border-2 border-dashed border-green-600 text-green-700 font-black scale-105 shadow-md ring-2 ring-green-50";
+        return "relative z-10 bg-green-500 border-2 border-green-700 text-white font-black shadow-lg ring-4 ring-green-100";
       }
       if (isUserChoice && !isCorrect) {
-        return "bg-red-500 border-2 border-red-700 text-white font-black";
+        return "relative z-10 bg-red-50 border-2 border-dotted border-red-600 text-red-700 font-black shadow-inner ring-4 ring-red-50";
       }
       return "bg-slate-50 text-slate-300 border border-slate-100 cursor-not-allowed opacity-40";
     }
@@ -125,9 +125,9 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
             <div className="flex justify-center mb-8 relative">
               <div className="absolute inset-0 bg-sky-400/10 blur-3xl rounded-full scale-50"></div>
               <div className="relative w-48 h-48 rounded-full border-[12px] border-white shadow-2xl overflow-hidden ring-1 ring-slate-100 group-hover:scale-105 transition-transform duration-500">
-                <img 
-                  src={currentProfile.avatar} 
-                  alt={currentProfile.name} 
+                <img
+                  src={currentProfile.avatar}
+                  alt={currentProfile.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'img/default-avatar.png';
@@ -149,15 +149,6 @@ const ProfileEvaluation: React.FC<ProfileEvaluationProps> = ({ team, profile, on
                 <p className="text-[10px] uppercase text-slate-400 font-black tracking-widest mb-1">Exp.</p>
                 <p className="text-xs font-black text-slate-800">{currentProfile.experience}</p>
               </div>
-            </div>
-
-            <div className="space-y-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
-              {currentProfile.traits.map((trait, idx) => (
-                <div key={idx} className="flex gap-4 text-slate-700 items-start leading-relaxed text-sm">
-                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0 shadow-sm shadow-sky-300"></div>
-                  <span className="font-medium text-slate-600">{trait}</span>
-                </div>
-              ))}
             </div>
           </div>
         </div>
