@@ -193,6 +193,15 @@
             const meta = completedProfiles.find((cp) => typeof cp === 'object' && cp && cp.id === TIMER_META_ID);
             if (!meta || typeof meta !== 'object') return null;
             const timers = meta.timers;
+            if (!timers) return null;
+            if (typeof timers === 'string') {
+                try {
+                    const parsed = JSON.parse(timers);
+                    return parsed && typeof parsed === 'object' ? parsed : null;
+                } catch (err) {
+                    return null;
+                }
+            }
             return timers && typeof timers === 'object' ? timers : null;
         }
 
@@ -200,7 +209,7 @@
             if (!team) return;
             const completedProfiles = Array.isArray(team.completedProfiles) ? team.completedProfiles : [];
             const withoutMeta = completedProfiles.filter((cp) => !(typeof cp === 'object' && cp && cp.id === TIMER_META_ID));
-            const meta = { id: TIMER_META_ID, timers: team.timers };
+            const meta = { id: TIMER_META_ID, timers: JSON.stringify(team.timers || {}) };
             team.completedProfiles = [meta, ...withoutMeta];
         }
 
@@ -291,7 +300,8 @@
 
                 // Keep local team in sync (timers, coins, etc.) so admin changes reflect immediately.
                 if (state.team && state.team.name) {
-                    const updatedSelf = state.registry.find(t => t.name === state.team.name);
+                    const myName = String(state.team.name || '').toLowerCase();
+                    const updatedSelf = state.registry.find(t => String(t.name || '').toLowerCase() === myName);
                     if (updatedSelf) {
                         state.team = mergeTeamData(state.team, updatedSelf);
                         localStorage.setItem('team_data', JSON.stringify(state.team));
@@ -323,7 +333,8 @@
                     // Prefer registry from response, but fallback to refetch if absent
                     if (Array.isArray(result.registry)) state.registry = result.registry.map((t) => normalizeTeam(t));
                     if (state.team) {
-                        const updatedSelf = state.registry.find(t => t.name === (payload.team.newName || payload.team.name));
+                        const lookup = String(payload?.team?.newName || payload?.team?.name || '').toLowerCase();
+                        const updatedSelf = state.registry.find(t => String(t.name || '').toLowerCase() === lookup);
                         if (updatedSelf) {
                             state.team = mergeTeamData(state.team, updatedSelf);
                             localStorage.setItem('team_data', JSON.stringify(state.team));
@@ -572,7 +583,7 @@
                         <h1 class="font-black text-xl tracking-tighter uppercase">Admin Panel</h1>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button onclick="fetchRegistry()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 font-black text-[10px] uppercase tracking-widest">Update</button>
+                        <button onclick="adminUpdate()" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 font-black text-[10px] uppercase tracking-widest">Update</button>
                         <div id="sync-indicator"></div>
                     </div>
                 </header>
@@ -1734,6 +1745,10 @@
             const team = state.registry.find(t => t.role === 'PARTICIPANT' && t.name === teamName);
             if (!team) return;
             if (await applyExtensionToTeam(team, normalizedSpec)) fetchRegistry().then(() => render());
+        };
+
+        window.adminUpdate = () => {
+            fetchRegistry(false);
         };
 
         if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');
