@@ -189,6 +189,7 @@
         if (state.team) state.team = normalizeTeam(state.team);
 
         function getTimersFromMeta(team) {
+            if (!team || team.role !== 'PARTICIPANT') return null;
             const completedProfiles = Array.isArray(team?.completedProfiles) ? team.completedProfiles : [];
             const meta = completedProfiles.find((cp) => typeof cp === 'object' && cp && cp.id === TIMER_META_ID);
             if (!meta || typeof meta !== 'object') return null;
@@ -207,6 +208,7 @@
 
         function upsertTimerMeta(team) {
             if (!team) return;
+            if (team.role !== 'PARTICIPANT') return;
             const completedProfiles = Array.isArray(team.completedProfiles) ? team.completedProfiles : [];
             const withoutMeta = completedProfiles.filter((cp) => !(typeof cp === 'object' && cp && cp.id === TIMER_META_ID));
             const meta = { id: TIMER_META_ID, timers: JSON.stringify(team.timers || {}) };
@@ -294,8 +296,11 @@
                 else registryData = [];
                 state.registry = registryData.map((t) => normalizeTeam(t));
                 const cfg = state.registry.find(t => t.name === '__SESSION_CONFIG__');
-                if (cfg && cfg.completedProfiles && cfg.completedProfiles[0]) {
-                    state.config = JSON.parse(cfg.completedProfiles[0]);
+                if (cfg && Array.isArray(cfg.completedProfiles)) {
+                    const maybeConfig = cfg.completedProfiles.find((v) => typeof v === 'string' && v.trim().startsWith('{'));
+                    if (maybeConfig) {
+                        try { state.config = JSON.parse(maybeConfig); } catch (err) {}
+                    }
                 }
 
                 // Keep local team in sync (timers, coins, etc.) so admin changes reflect immediately.
@@ -364,8 +369,7 @@
                     silverCoins: team.silverCoins,
                     completedProfiles: team.completedProfiles,
                     completedPerformanceProfiles: team.completedPerformanceProfiles,
-                    completedNineBox: team.completedNineBox,
-                    timers: team.timers
+                    completedNineBox: team.completedNineBox
                 }
             });
         }
