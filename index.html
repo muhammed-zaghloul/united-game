@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Leading Talenets</title>
+    <title>Leading Talents</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
@@ -19,6 +19,7 @@
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .spin-slow { animation: spin 3s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .coin-diamond { scale: 1.6; }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -39,7 +40,7 @@
 
     <script>
         // --- API CONFIG ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbzh9-yRJguMm_m7Phq40caCORjAtm03XvWH8YrgHl7bLkZyIODIQHYU-OZyN7_aI6QN/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycby-xblvn4mvOBMM0IkCvLAYNbpMS5K9TaHoKaiBF4n5NhQyrkTljwsmUWYu9WXTkTrh/exec";
 
         const RUBRIC_DATA = [
             {
@@ -58,25 +59,25 @@
                     1: "Lack core skills required to do his job",
                     2: "Have core skills required to do his job. However, he need development in some areas under supervision",
                     3: "Have core skills required to do his job with minimal support",
-                    4: "Have additional skills that distinguish him from others and able to work independently OR have core skills along with ability to mentor others",
-                    5: "Have additional skills that distinguish him from others and able to work independently AND have core skills along with ability to mentor others"
+                    4: "Have additional skills that distinguish him from others and Or with ability to mentor others",
+                    5: "Have additional skills that distinguish him from others And with ability to mentor others"
                 }
             },
             {
                 name: "Attitude",
                 levels: {
-                    1: "Consistently displays unprofessional behavior and frequently resists, manipulates and breaks the rules",
+                    1: "Consistently displays unprofessional behavior and/or frequently resists, manipulates and breaks the rules",
                     2: "Occasionally shows acceptable behavior but is inconsistent.",
                     3: "Generally, behaves appropriately and follows guidelines.",
                     4: "Proactive, and has distinguished behavior that give him edge over others, e.g., highly agile or accept and look for feedback",
-                    5: "Proactive role Model, Always models exceptional behavior and professionalism and fosters positive culture"
+                    5: "Proactive, and has distinguished behavior that give him edge over others, e.g., highly agile or accept and look for feedback and has significant role in fostering positive culture"
                 }
             }
         ];
 
         const PERFORMANCE_RUBRIC_DATA = [
-            { name: "Performance", levels: { 1: "Achievement less than 96%", 2: "Achievement 96-100%", 3: "Achievement more than 100%" } },
-            { name: "Potential", levels: { 1: "Aspiration & Organizational Commitment present (or absent)", 2: "Aspiration & Organizational Commitment plus Capacity or Learning Agility", 3: "Aspiration & Organizational Commitment plus Capacity and Learning Agility" } }
+            { name: "Performance", levels: { 1: "Not Achieved", 2: "Achieved", 3: "Exceed Achievement" } },
+            { name: "Potential", levels: { 1: "Aspiration & Organizational Commitment present Only (or absent)", 2: "Aspiration & Organizational Commitment plus Capacity or Learning Agility", 3: "Aspiration & Organizational Commitment plus Capacity and Learning Agility" } }
         ];
 
         const PROFILES = [
@@ -89,7 +90,7 @@
                 "Promoted to branch manager since 6 Years",
                 "Ach last year: 104%, Q1= 107%",
                 "Career aspiration: Operation & Sales Supervisor"
-            ], answers: { k: 4, s: 3, a: 4 }, performancePotential: { performance: 3, potential: 2 } },
+            ], answers: { k: 4, s: 2, a: 4 }, performancePotential: { performance: 3, potential: 2 } },
             { id: "youseff", name: "Youssef", avatar: "img/youssef-avatar.png", job: "Pharmacist", age: 25, exp: "1.5 Years", traits: [
                 "In-depth knowledge of company policies and procedures and Very good product knowledge.",
                 "Needs to become more open to adopting new technologies. Struggles to adjust methods when existing practices are no longer effective.",
@@ -97,7 +98,7 @@
                 "He is friendly towards colleagues and effectively handling poor customer experience.",
                 "Ach last year: 96.5%, Q1 is 99%.",
                 "Career aspiration: L&D Supervisor or Sales Supervisor or Category Manager"
-            ], answers: { k: 4, s: 3, a: 3 }, performancePotential: { performance: 2, potential: 1 } },
+            ], answers: { k: 4, s: 3, a: 2 }, performancePotential: { performance: 2, potential: 1 } },
             { id: "faisal", name: "Faisal", avatar: "img/faisal-avatar.png", job: "Pharmacist", age: 27, exp: "3 Years", traits: [
                 "Although his technical exam scores are almost good, he is distinguished for his CX and selling skills.",
                 "Collaborative employee who always seeks for development & feedback and act accordingly.",
@@ -166,7 +167,8 @@
             performanceRoundIndex: null,
             ksaRoundIndex: null,
             timerId: null,
-            timerStatusCache: { performance: null, ksa: null, ninebox: null },
+            // timerStatusCache: { performance: null, ksa: null, ninebox: null },
+            timerStatusCache: { performance: 'none', ksa: 'none', ninebox: 'none' },
             nineBoxPlacements: {},
             isNineBoxSubmitted: false,
             draggingProfileId: null,
@@ -346,7 +348,7 @@
                         }
                     }
                     // Immediately re-render so UI reflects changes without waiting
-                    render();
+                    // render();
                     return true;
                 }
                 return false;
@@ -375,6 +377,8 @@
         }
 
         function save() {
+                console.trace('SAVE CALLED');  // ← Add this to see the call stack
+
             if (state.team) {
                 state.team = normalizeTeam(state.team);
                 localStorage.setItem('team_data', JSON.stringify(state.team));
@@ -440,12 +444,16 @@
                     state.isNineBoxSubmitted = false;
                 }
             }
-            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true).then(() => render()); }
+            // if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true).then(() => render()); }
+                        if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true); }
+
             render();
             window.scrollTo(0, 0);
         }
 
         function render() {
+                console.log('RENDER CALLED:', state.view); // ← Add this
+
             const root = document.getElementById('root');
             switch(state.view) {
                 case 'LOGIN': root.innerHTML = renderLogin(); break;
@@ -467,21 +475,63 @@
             ensureRegistryPolling();
         }
 
+        // function ensureRegistryPolling() {
+        //     const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
+        //     if (!isParticipant) {
+        //         if (state.registryPollId) {
+        //             clearInterval(state.registryPollId);
+        //             state.registryPollId = null;
+        //         }
+        //         return;
+        //     }
+        //     if (state.registryPollId) return;
+        //     // Poll to pick up admin timer extensions / config changes without requiring relog.
+        //     state.registryPollId = setInterval(() => {
+        //         fetchRegistry(true);
+        //     }, 5000);
+        // }
+
         function ensureRegistryPolling() {
-            const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
-            if (!isParticipant) {
-                if (state.registryPollId) {
-                    clearInterval(state.registryPollId);
-                    state.registryPollId = null;
-                }
-                return;
-            }
-            if (state.registryPollId) return;
-            // Poll to pick up admin timer extensions / config changes without requiring relog.
-            state.registryPollId = setInterval(() => {
-                fetchRegistry(true);
-            }, 5000);
+            console.log("test")
+    const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
+    if (!isParticipant) {
+        if (state.registryPollId) {
+            clearInterval(state.registryPollId);
+            state.registryPollId = null;
         }
+        return;
+    }
+    if (state.registryPollId) return;
+    
+    state.registryPollId = setInterval(async () => {
+        try {
+            const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            let registryData = [];
+            if (Array.isArray(data)) registryData = data;
+            else if (data && Array.isArray(data.registry)) registryData = data.registry;
+            
+            // Update config from registry
+            const cfg = registryData.find(t => t.name === '__SESSION_CONFIG__');
+            if (cfg && Array.isArray(cfg.completedProfiles)) {
+                const maybeConfig = cfg.completedProfiles.find((v) => typeof v === 'string' && v.trim().startsWith('{'));
+                if (maybeConfig) {
+                    try { 
+                        state.config = JSON.parse(maybeConfig);
+                        // Update activity buttons if on LANDING page
+                        if (state.view === 'LANDING') {
+                            updateActivityButtons();
+                        }
+                    } catch (err) {}
+                }
+            }
+        } catch (err) {
+            console.error("Registry polling error:", err);
+        }
+    }, 1000); // Poll every 1 second
+}
 
         function renderSyncStatus() {
             const el = document.getElementById('sync-indicator');
@@ -515,47 +565,124 @@
             </div>`;
         }
 
-        function renderLanding() {
-            const isAdmin = state.team.role === 'ADMIN';
-            return `<div class="min-h-screen bg-slate-50">
-                <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
-                        <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div id="sync-indicator"></div>
-                        <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
-                    </div>
-                </header>
-                <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
-                    <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
-                    <div class="grid gap-6">
-                        ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
-                            <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
-                        </button>` : `
-                        <button onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
-                        </button>
-                        <button onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
-                        </button>
-                        <button onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
-                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
-                        </button>
-                        `}
-                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
-                            <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
-                        </button>
-                    </div>
-                </main>
-            </div>`;
+        function updateActivityButtons() {
+    const activity1Btn = document.querySelector('[data-activity="activity1"]');
+    const activity2Btn = document.querySelector('[data-activity="activity2"]');
+    const activity3Btn = document.querySelector('[data-activity="activity3"]');
+    
+    if (activity1Btn) {
+        if (state.config.activity1) {
+            activity1Btn.onclick = () => navigate('PERFORMANCE_ROUNDS');
+            activity1Btn.classList.remove('opacity-50', 'grayscale');
+        } else {
+            activity1Btn.onclick = () => alert('Locked');
+            activity1Btn.classList.add('opacity-50', 'grayscale');
         }
+    }
+    
+    if (activity2Btn) {
+        if (state.config.activity2) {
+            activity2Btn.onclick = () => openNineBox();
+            activity2Btn.classList.remove('opacity-50', 'grayscale');
+        } else {
+            activity2Btn.onclick = () => alert('Locked');
+            activity2Btn.classList.add('opacity-50', 'grayscale');
+        }
+    }
+    
+    if (activity3Btn) {
+        if (state.config.activity3) {
+            activity3Btn.onclick = () => navigate('KSA_ROUNDS');
+            activity3Btn.classList.remove('opacity-50', 'grayscale');
+        } else {
+            activity3Btn.onclick = () => alert('Locked');
+            activity3Btn.classList.add('opacity-50', 'grayscale');
+        }
+    }
+}
+
+function renderLanding() {
+    const isAdmin = state.team.role === 'ADMIN';
+    return `<div class="min-h-screen bg-slate-50">
+        <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
+                <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <div id="sync-indicator"></div>
+                <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
+            </div>
+        </header>
+        <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
+            <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
+            <div class="grid gap-6">
+                ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
+                    <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
+                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
+                </button>` : `
+                <button data-activity="activity1" onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
+                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
+                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance &amp; Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
+                </button>
+                <button data-activity="activity2" onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
+                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
+                </button>
+                <button data-activity="activity3" onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
+                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
+                </button>
+                `}
+                <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
+                    <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
+                </button>
+            </div>
+        </main>
+    </div>`;
+}
+        // function renderLanding() {
+        //     const isAdmin = state.team.role === 'ADMIN';
+        //     return `<div class="min-h-screen bg-slate-50">
+        //         <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
+        //             <div class="flex items-center gap-3">
+        //                 <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
+        //                 <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
+        //             </div>
+        //             <div class="flex items-center gap-3">
+        //                 <div id="sync-indicator"></div>
+        //                 <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
+        //             </div>
+        //         </header>
+        //         <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
+        //             <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
+        //             <div class="grid gap-6">
+        //                 ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
+        //                     <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
+        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
+        //                 </button>` : `
+        //                 <button onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
+        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
+        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
+        //                 </button>
+        //                 <button onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
+        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
+        //                 </button>
+        //                 <button onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
+        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
+        //                 </button>
+        //                 `}
+        //                 <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
+        //                     <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
+        //                 </button>
+        //             </div>
+        //         </main>
+        //     </div>`;
+        // }
 
         function renderAdminDashboard() {
             const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
@@ -672,16 +799,16 @@
                                             </td>
                                             <td class="p-4 sm:p-6">
                                                 <div class="flex gap-4">
-                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">GOLD</span><span class="font-black text-yellow-600">${t.goldCoins}</span></div>
-                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-slate-400">SILVER</span><span class="font-black text-slate-400">${t.silverCoins}</span></div>
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">DIAMOND</span><span class="font-black text-yellow-600">${t.goldCoins}</span></div>
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-slate-400">GOLD</span><span class="font-black text-slate-400">${t.silverCoins}</span></div>
                                                 </div>
                                             </td>
                                             <td class="p-4 sm:p-6 text-right space-x-2">
                                                 <div class="inline-flex items-center gap-2">
-                                                    <button onclick="adminAdjustCoins('${t.name}', -1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">-G</button>
-                                                    <button onclick="adminAdjustCoins('${t.name}', 1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">+G</button>
-                                                    <button onclick="adminAdjustCoins('${t.name}', 0, -1)" class="px-2 py-1 text-[10px] font-black rounded-md bg-slate-50 text-slate-600 border border-slate-200">-S</button>
-                                                    <button onclick="adminAdjustCoins('${t.name}', 0, 1)" class="px-2 py-1 text-[10px] font-black rounded-md bg-slate-50 text-slate-600 border border-slate-200">+S</button>
+                                                    <button onclick="adminAdjustCoins('${t.name}', -1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">-D</button>
+                                                    <button onclick="adminAdjustCoins('${t.name}', 1, 0)" class="px-2 py-1 text-[10px] font-black rounded-md bg-yellow-50 text-yellow-700 border border-yellow-200">+D</button>
+                                                    <button onclick="adminAdjustCoins('${t.name}', 0, -1)" class="px-2 py-1 text-[10px] font-black rounded-md bg-slate-50 text-slate-600 border border-slate-200">-G</button>
+                                                    <button onclick="adminAdjustCoins('${t.name}', 0, 1)" class="px-2 py-1 text-[10px] font-black rounded-md bg-slate-50 text-slate-600 border border-slate-200">+G</button>
                                                 </div>
                                                 <button onclick="adminEditTeam('${t.name}')" class="text-sky-600 p-2 hover:bg-sky-50 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
                                                 <button onclick="adminDeleteTeam('${t.name}')" class="text-red-600 p-2 hover:bg-red-50 rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
@@ -704,11 +831,15 @@
             const roundProfiles = round.ids.map((id) => PROFILES.find((p) => p.id === id)).filter(Boolean);
             const timerText = getRoundTimerText('performance', roundIndex);
             return `<div class="min-h-screen bg-slate-50 pb-28">
-                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                    <button onclick="navigate('PERFORMANCE_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Performance & Potential</h1>
-                    <div class="flex items-center gap-2">
+                <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <button onclick="navigate('PERFORMANCE_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <h1 class="font-black uppercase tracking-widest text-xs text-slate-400 hidden sm:block truncate">Performance & Potential</h1>
+                    </div>
+                    <div class="flex justify-center">
                         ${renderTimerPill('timer-performance', timerText)}
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
                         <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
@@ -768,12 +899,16 @@
             const roundProfiles = round.ids.map((id) => PROFILES.find((p) => p.id === id)).filter(Boolean);
             const timerText = getRoundTimerText('ksa', roundIndex);
             return `<div class="min-h-screen bg-slate-50 pb-28">
-                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                    <button onclick="navigate('KSA_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">Select Profile</h1>
-                    <div class="flex items-center gap-2">
+                <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <button onclick="navigate('KSA_ROUNDS')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <h1 class="font-black uppercase tracking-widest text-xs text-slate-400 hidden sm:block truncate">Select Profile</h1>
+                    </div>
+                    <div class="flex justify-center">
                         ${renderTimerPill('timer-ksa', timerText)}
-                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
+                    </div>
+                    <div class="flex items-center justify-end gap-2">
+                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 0 01-2-2z"></path></svg></button>
                     </div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto">
@@ -1047,7 +1182,7 @@
         function renderTimerPill(id, text) {
             if (!text) return '';
             const isUp = text === 'Time Up';
-            return `<div class="px-3 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${isUp ? 'bg-red-50 border-red-200 text-red-700' : text === 'Not started' ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}"><span id="${id}">${text}</span></div>`;
+            return `<div class="px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black uppercase tracking-widest text-center tabular-nums ${isUp ? 'bg-red-50 border-red-200 text-red-700' : text === 'Not started' ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}"><span id="${id}">${text}</span></div>`;
         }
 
         function getCompletedIds(list) {
@@ -1084,17 +1219,21 @@
             const timeUp = isRoundTimeUp('performance');
             const roundIndex = getCurrentPerformanceRoundIndex();
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                    <button onclick="navigate('PERFORMANCE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <button onclick="toggleRubric('PERFORMANCE')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
-                    <div class="flex flex-wrap gap-2 items-center">
+                <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigate('PERFORMANCE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <button onclick="toggleRubric('PERFORMANCE')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
+                    </div>
+                    <div class="flex justify-center">
                         ${renderTimerPill('timer-performance-eval', getRoundTimerText('performance', roundIndex))}
-                        <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-2 items-center">
+                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
                             <span>${state.team.goldCoins}</span>
                         </div>
-                        <div class="bg-slate-50 px-3 py-1 rounded-xl border font-black text-slate-400 text-xs flex items-center gap-1.5">
-                            <img src="img/silver-coin.png" alt="Silver coin" class="w-4 h-4" />
+                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
                             <span>${state.team.silverCoins}</span>
                         </div>
                     </div>
@@ -1109,7 +1248,7 @@
                     <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
                         ${['performance', 'potential'].map(cat => `<div class="space-y-4">
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'performance' ? 'Performance' : 'Potential'}</p>
-                            <div class="grid grid-cols-3 gap-2.5">${[1, 2, 3].map(v => `<button onclick="handlePerformanceScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
+                            <div class="grid grid-cols-3 gap-2.5">${[1, 2, 3].map(v => `<button  onclick="handlePerformanceScore('${cat}', ${v}, this)" class="h-14 rounded-2xl font-black text-lg transition-all ${getPerformanceButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
                         <button data-submit="performance" ${!state.isPerformanceSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isPerformanceSubmitted ? "navigate('PERFORMANCE_SELECTION')" : "handleSubmitPerformance()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isPerformanceSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isPerformanceSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
@@ -1123,22 +1262,28 @@
             const placements = state.isNineBoxSubmitted && savedNineBox?.placementsCorrected ? savedNineBox.placementsCorrected : (state.nineBoxPlacements || {});
             const feedback = state.isNineBoxSubmitted && savedNineBox?.feedback ? savedNineBox.feedback : {};
             const gridCells = getNineBoxCells();
-            const labels = gridCells.map(cell => ({ key: cell.key, label: cell.label }));
+            const labels = [...gridCells]
+                .sort((a, b) => (a.potential - b.potential) || (b.performance - a.performance))
+                .map(cell => ({ key: cell.key, label: cell.label }));
             const placedKeys = Object.keys(placements);
             const canSubmit = placedKeys.length === labels.length;
 
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                    <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <h1 class="font-black uppercase tracking-widest text-xs text-slate-400">9-Box Grid</h1>
-                    <div class="flex flex-wrap gap-2 items-center">
+                <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <h1 class="font-black uppercase tracking-widest text-xs text-slate-400 hidden sm:block truncate">9-Box Grid</h1>
+                    </div>
+                    <div class="flex justify-center">
                         ${renderTimerPill('timer-ninebox', getNineBoxTimerText())}
-                        <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-2 items-center">
+                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
                             <span>${state.team.goldCoins}</span>
                         </div>
-                        <div class="bg-slate-50 px-3 py-1 rounded-xl border font-black text-slate-400 text-xs flex items-center gap-1.5">
-                            <img src="img/silver-coin.png" alt="Silver coin" class="w-4 h-4" />
+                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
                             <span>${state.team.silverCoins}</span>
                         </div>
                     </div>
@@ -1211,17 +1356,21 @@
             const timeUp = isRoundTimeUp('ksa');
             const roundIndex = getCurrentKsaRoundIndex();
             return `<div class="min-h-screen bg-slate-50 pb-32">
-                <header class="glass sticky top-0 z-40 p-4 flex flex-wrap items-center justify-between gap-3 border-b">
-                    <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-                    <button onclick="toggleRubric('KSA')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
-                    <div class="flex flex-wrap gap-2 items-center">
+                <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="navigate('PROFILE_SELECTION')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
+                        <button onclick="toggleRubric('KSA')" class="bg-red-600 text-white px-4 py-2 rounded-2xl font-black text-[10px] uppercase">Rubric</button>
+                    </div>
+                    <div class="flex justify-center">
                         ${renderTimerPill('timer-ksa-eval', getRoundTimerText('ksa', roundIndex))}
-                        <div class="bg-yellow-50 px-3 py-1 rounded-xl border font-black text-yellow-700 text-xs flex items-center gap-1.5">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
+                    </div>
+                    <div class="flex flex-wrap justify-end gap-2 items-center">
+                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
                             <span>${state.team.goldCoins}</span>
                         </div>
-                        <div class="bg-slate-50 px-3 py-1 rounded-xl border font-black text-slate-400 text-xs flex items-center gap-1.5">
-                            <img src="img/silver-coin.png" alt="Silver coin" class="w-4 h-4" />
+                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
                             <span>${state.team.silverCoins}</span>
                         </div>
                     </div>
@@ -1236,7 +1385,7 @@
                     <div class="bg-white p-5 sm:p-8 rounded-[3rem] shadow-2xl space-y-8">
                         ${['k', 's', 'a'].map(cat => `<div class="space-y-4">
                             <p class="text-center font-black uppercase text-[10px] text-slate-500 tracking-widest">${cat === 'k' ? 'Knowledge' : cat === 's' ? 'Skills' : 'Attitude'}</p>
-                            <div class="grid grid-cols-5 max-[420px]:grid-cols-3 gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v})" class="h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
+                            <div class="grid grid-cols-5 max-[420px]:grid-cols-3 gap-2.5">${[1, 2, 3, 4, 5].map(v => `<button onclick="handleScore('${cat}', ${v}, this)" class="h-14 rounded-2xl font-black text-lg transition-all ${getButtonStyles(cat, v)}">${v}</button>`).join('')}</div>
                         </div>`).join('')}
                         <button data-submit="ksa" ${!state.isSubmitted && timeUp ? 'disabled' : ''} onclick="${state.isSubmitted ? "navigate('PROFILE_SELECTION')" : "handleSubmitEvaluation()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isSubmitted ? 'bg-sky-600 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-sky-600 text-white'}">${state.isSubmitted ? 'Back to List' : timeUp ? 'Time Up' : 'Submit Review'}</button>
                     </div>
@@ -1280,18 +1429,18 @@
                     <div id="sync-indicator"></div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto space-y-6">
-                    <div class="text-center py-10 sm:py-12"><div class="mb-4 coin-bounce flex justify-center"><img src="img/golden-coin.png" alt="Gold coin" class="w-12 h-12 sm:w-16 sm:h-16" /></div><h2 class="text-4xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2></div>
+                    <div class="text-center py-10 sm:py-12"><div class="mb-4 coin-bounce flex justify-center"><img src="img/diamond-coin.png" alt="Diamond coin" class="w-12 h-12 sm:w-16 sm:h-16 coin-diamond" /></div><h2 class="text-4xl sm:text-5xl font-black italic tracking-tighter uppercase leading-none">Leaderboard</h2></div>
                     <div class="space-y-4">
                         ${rankings.map(r => `<div class="flex flex-wrap items-center gap-4 sm:gap-5 p-4 sm:p-6 rounded-[2.5rem] border-2 ${r.you ? 'bg-sky-600 border-sky-400 shadow-xl' : 'bg-slate-800/40 border-slate-700'}">
                                 <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-lg sm:text-xl ${r.rank === 1 ? 'bg-yellow-400 text-yellow-900 shadow-xl' : 'bg-slate-700 text-slate-400'}">${r.rank}</div>
                                 <div class="flex-1 font-black text-lg sm:text-xl tracking-tight">${r.name}${r.you ? ' (YOU)' : ''}</div>
                                 <div class="flex gap-4">
                                     <div class="text-center flex flex-col items-center gap-1">
-                                        <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
+                                        <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
                                         <p class="font-black text-yellow-400 text-lg">${r.goldCoins}</p>
                                     </div>
                                     <div class="text-center flex flex-col items-center gap-1">
-                                        <img src="img/silver-coin.png" alt="Silver coin" class="w-5 h-5" />
+                                        <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
                                         <p class="font-black text-slate-300 text-lg">${r.silverCoins}</p>
                                     </div>
                                 </div>
@@ -1324,19 +1473,19 @@
                 const coinRules = isNine
                     ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
                         <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                        <div class="text-sm font-semibold text-slate-700">+1 Silver per correct placement</div>
+                        <div class="text-sm font-semibold text-slate-700">+1 Gold per correct placement</div>
                     </div>`
                     : pending.activity === 'performance'
                         ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                            <div class="text-sm font-semibold text-slate-700">Performance correct: +1 Silver</div>
-                            <div class="text-sm font-semibold text-slate-700">Potential correct: +2 Silver</div>
-                            <div class="text-sm font-semibold text-slate-700">Max per profile: 3 Silver</div>
+                            <div class="text-sm font-semibold text-slate-700">Performance correct: +1 Gold</div>
+                            <div class="text-sm font-semibold text-slate-700">Potential correct: +2 Gold</div>
+                            <div class="text-sm font-semibold text-slate-700">Max per profile: 3 Gold</div>
                         </div>`
                         : `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                            <div class="text-sm font-semibold text-slate-700">+1 Silver per correct answer</div>
-                            <div class="text-sm font-semibold text-slate-700">3/3 correct: +1 Gold bonus</div>
+                            <div class="text-sm font-semibold text-slate-700">+1 Gold per correct answer</div>
+                            <div class="text-sm font-semibold text-slate-700">3/3 correct: +1 Diamond bonus</div>
                         </div>`;
                 container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                     <div class="p-6 border-b bg-slate-50 flex items-center justify-between">
@@ -1396,7 +1545,29 @@
             const rubricScores = state.rubricType === 'PERFORMANCE' ? [1, 2, 3] : [1, 2, 3, 4, 5];
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                 <div class="p-6 sm:p-8 border-b flex justify-between items-center bg-slate-50"><h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">Expert Rubric</h2><button onclick="toggleRubric()" class="p-2 text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
-                <div class="p-6 overflow-y-auto space-y-8">${rubricData.map(c => `<div class="space-y-4"><h3 class="text-sky-600 font-black uppercase text-xs flex items-center gap-2"><span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>${c.name}</h3><div class="grid gap-2.5">${rubricScores.map(s => `<div class="flex items-start gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100"><div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">${s}</div><p class="text-xs font-semibold text-slate-600 leading-relaxed">${c.levels[s]}</p></div>`).join('')}</div></div>`).join('')}</div>
+                <div class="p-6 overflow-y-auto space-y-8">${rubricData.map(c => `<div class="space-y-4"><h3 class="text-sky-600 font-black uppercase text-xs flex items-center gap-2"><span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>${c.name}</h3><div class="grid gap-2.5">${rubricScores.map(s => `<div class="flex items-start gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100"><div class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-black text-sm shrink-0 shadow-sm">${s}</div><p class="text-xs font-semibold text-slate-600 leading-relaxed">${c.levels[s]}</p></div>`).join('')}</div></div>`).join('')}
+                ${state.rubricType === 'PERFORMANCE' ? `
+                    <div class="space-y-4">
+                        <h3 class="text-sky-600 font-black uppercase text-xs flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 bg-sky-600 rounded-full"></span>Definitions
+                        </h3>
+                        <div class="space-y-3">
+                            <div class="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Aspiration and Organizational Commitment</p>
+                                <p class="text-xs font-semibold text-slate-600 leading-relaxed mt-2">The desire and intention to take on greater responsibility AND<br/>The commitment to grow with the organization in a way that contribute to your team and organization success.</p>
+                            </div>
+                            <div class="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Capacity</p>
+                                <p class="text-xs font-semibold text-slate-600 leading-relaxed mt-2">The demonstrated ability to operate effectively at broader scope and higher complexity in the upcoming career role</p>
+                            </div>
+                            <div class="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Learning Agility</p>
+                                <p class="text-xs font-semibold text-slate-600 leading-relaxed mt-2">The ability and willingness to Learn from experience and feedback AND<br/>Apply independently and effectively in new, unfamiliar, or first-time situations.</p>
+                            </div>
+                        </div>
+                    </div>
+                ` : ''}
+                </div>
                 <div class="p-6 sm:p-8 border-t bg-slate-50"><button onclick="toggleRubric()" class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Understood</button></div>
             </div>`;
         }
@@ -1409,15 +1580,15 @@
             const isGold = state.coinPopupType === 'gold';
             const isSilver = state.coinPopupType === 'silver';
             const isMulti = state.coinPopupType === 'multi';
-            const title = state.coinPopupDetails.title || (isMulti ? 'Results' : isGold ? 'Gold Coin!' : isSilver ? 'Silver Coin!' : 'No Coin');
+            const title = state.coinPopupDetails.title || (isMulti ? 'Results' : isGold ? 'Diamond Coin!' : isSilver ? 'Gold Coin!' : 'No Coin');
             const message = isMulti
                 ? (state.coinPopupDetails.message || 'Coins earned')
                 : isGold
-                    ? (state.coinPopupDetails.message || 'Coins earned: 1 Gold')
+                    ? (state.coinPopupDetails.message || 'Coins earned: 1 Diamond')
                     : isSilver
-                        ? (state.coinPopupDetails.message || 'Coins earned: 1 Silver')
+                        ? (state.coinPopupDetails.message || 'Coins earned: 1 Gold')
                         : (state.coinPopupDetails.message || 'Coins earned: 0');
-            const coinImg = isGold ? 'img/golden-coin.png' : isSilver ? 'img/silver-coin.png' : '';
+            const coinImg = isGold ? 'img/diamond-coin.png' : isSilver ? 'img/golden-coin.png' : '';
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                 <div class="p-5 sm:p-6 border-b bg-slate-50 text-center">
                     <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">${title}</h2>
@@ -1425,11 +1596,11 @@
                 <div class="p-6 sm:p-8 flex flex-col items-center gap-4 text-center">
                     ${isMulti ? `<div class="flex items-center gap-6">
                         <div class="flex flex-col items-center gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-14 h-14" />
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-14 h-14 coin-diamond" />
                             <span class="font-black text-yellow-600 text-lg">${state.coinPopupDetails.gold}</span>
                         </div>
                         <div class="flex flex-col items-center gap-2">
-                            <img src="img/silver-coin.png" alt="Silver coin" class="w-14 h-14" />
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-14 h-14" />
                             <span class="font-black text-slate-500 text-lg">${state.coinPopupDetails.silver}</span>
                         </div>
                     </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>'}
@@ -1466,18 +1637,118 @@
         };
 
         window.handleLogout = () => { localStorage.removeItem('team_data'); state.team = null; navigate('LOGIN'); };
-        window.handleScore = (cat, val) => {
-            if (state.isSubmitted) return;
-            if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
-            state.evaluations[cat] = val;
-            render();
-        };
-        window.handlePerformanceScore = (cat, val) => {
-            if (state.isPerformanceSubmitted) return;
-            if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
-            state.performanceEvaluations[cat] = val;
-            render();
-        };
+        // window.handleScore = (cat, val) => {
+        //     if (state.isSubmitted) return;
+        //     if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
+        //     state.evaluations[cat] = val;
+        //     render();
+        // };
+
+         window.handleScore = (cat, val, btn) => {
+  if (state.isSubmitted) return;
+  if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
+
+  state.evaluations[cat] = val;
+
+  // scope to this K / S / A grid only
+  const container = btn.closest('.grid');
+
+  container.querySelectorAll('button').forEach(b => {
+    // remove active styles
+    b.classList.remove(
+      'bg-sky-600',
+      'text-white',
+      'shadow-2xl',
+      'scale-110',
+      'ring-4',
+      'ring-sky-100',
+      'z-10'
+    );
+
+    // restore inactive styles
+    b.classList.add(
+      'bg-white',
+      'text-slate-500',
+      'border',
+      'border-slate-200'
+    );
+  });
+
+  // remove inactive styles from clicked button
+  btn.classList.remove(
+    'bg-white',
+    'text-slate-500',
+    'border',
+    'border-slate-200'
+  );
+
+  // apply active styles
+  btn.classList.add(
+    'bg-sky-600',
+    'text-white',
+    'shadow-2xl',
+    'scale-110',
+    'ring-4',
+    'ring-sky-100',
+    'z-10'
+  );
+};
+
+        // window.handlePerformanceScore = (cat, val) => {
+        //     if (state.isPerformanceSubmitted) return;
+        //     if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
+        //     state.performanceEvaluations[cat] = val;
+        //     render();
+        // };
+
+        window.handlePerformanceScore = (cat, val, btn) => {
+  if (state.isPerformanceSubmitted) return;
+  if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
+
+  state.performanceEvaluations[cat] = val;
+
+  const container = btn.closest('.grid');
+
+  container.querySelectorAll('button').forEach(b => {
+    b.classList.remove(
+      'bg-sky-600',
+      'text-white',
+      'shadow-2xl',
+      'scale-110',
+      'ring-4',
+      'ring-sky-100',
+      'z-10'
+    );
+
+    // 👈 restore inactive styles
+    b.classList.add(
+      'bg-white',
+      'text-slate-500',
+      'border',
+      'border-slate-200'
+    );
+  });
+
+  // ❗ remove inactive styles from clicked button
+  btn.classList.remove(
+    'bg-white',
+    'text-slate-500',
+    'border',
+    'border-slate-200'
+  );
+
+  // ✅ add active styles
+  btn.classList.add(
+    'bg-sky-600',
+    'text-white',
+    'shadow-2xl',
+    'scale-110',
+    'ring-4',
+    'ring-sky-100',
+    'z-10'
+  );
+};
+
         window.toggleRubric = (type) => { state.profilePreviewId = null; state.rubricType = type || state.rubricType || 'KSA'; state.isRubricOpen = !state.isRubricOpen; render(); };
         window.closeCoinPopup = () => { state.showCoinPopup = false; render(); };
         window.openProfilePreview = (profileId) => { state.isRubricOpen = false; state.profilePreviewId = profileId; render(); };
@@ -1591,7 +1862,7 @@
                 title: 'Activity 3 Results',
                 gold: goldEarned,
                 silver: silverEarned,
-                message: `Gold: ${goldEarned} • Silver: ${silverEarned}`
+                message: `Diamond: ${goldEarned} • Gold: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save(); render();
@@ -1621,7 +1892,7 @@
                 title: 'Activity 1 Results',
                 gold: 0,
                 silver: silverEarned,
-                message: `Gold: 0 • Silver: ${silverEarned}`
+                message: `Diamond: 0 • Gold: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save(); render();
@@ -1660,7 +1931,7 @@
                 title: 'Activity 2 Results',
                 gold: goldEarned,
                 silver: silverEarned,
-                message: `Gold: ${goldEarned} • Silver: ${silverEarned}`
+                message: `Diamond: ${goldEarned} • Gold: ${silverEarned}`
             };
             state.showCoinPopup = true;
             save();
@@ -1755,8 +2026,11 @@
             fetchRegistry(false);
         };
 
-        if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');
+        // if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');
+        if (state.team) { 
+    navigate('LANDING'); 
+} else navigate('LOGIN');
     </script>
-<script type="module" src="/index.tsx"></script>
+    <!-- <script type="module" src="/index.tsx"></script> -->
 </body>
 </html>
