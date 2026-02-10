@@ -158,6 +158,7 @@
             pendingTimerStart: null,
             adminTimerExt: { teamName: 'ALL', target: 'performance', roundIndex: 1 },
             registryPollId: null,
+            registryPollMs: null,
             evaluations: { k: null, s: null, a: null },
             isSubmitted: false,
             result: null,
@@ -444,8 +445,12 @@
                     state.isNineBoxSubmitted = false;
                 }
             }
-            // if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true).then(() => render()); }
-                        if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true); }
+            // Keep admin/leaderboard views fresh: fetch registry, then re-render once data arrives.
+            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) {
+                fetchRegistry(true).then(() => {
+                    if (state.view === view) render();
+                });
+            }
 
             render();
             window.scrollTo(0, 0);
@@ -492,46 +497,50 @@
         // }
 
         function ensureRegistryPolling() {
-            console.log("test")
-    const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
-    if (!isParticipant) {
-        if (state.registryPollId) {
-            clearInterval(state.registryPollId);
-            state.registryPollId = null;
-        }
-        return;
-    }
-    if (state.registryPollId) return;
-    
-    state.registryPollId = setInterval(async () => {
-        try {
-            const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
-            if (!res.ok) return;
-            const data = await res.json();
-            
-            let registryData = [];
-            if (Array.isArray(data)) registryData = data;
-            else if (data && Array.isArray(data.registry)) registryData = data.registry;
-            
-            // Update config from registry
-            const cfg = registryData.find(t => t.name === '__SESSION_CONFIG__');
-            if (cfg && Array.isArray(cfg.completedProfiles)) {
-                const maybeConfig = cfg.completedProfiles.find((v) => typeof v === 'string' && v.trim().startsWith('{'));
-                if (maybeConfig) {
-                    try { 
-                        state.config = JSON.parse(maybeConfig);
-                        // Update activity buttons if on LANDING page
-                        if (state.view === 'LANDING') {
-                            updateActivityButtons();
-                        }
-                    } catch (err) {}
+            const isLoggedIn = Boolean(state.team);
+            const role = state.team?.role || null;
+
+            const shouldPoll = Boolean(
+                isLoggedIn && (
+                    role === 'PARTICIPANT' ||
+                    (role === 'ADMIN' && ['ADMIN_DASHBOARD', 'LEADERBOARD'].includes(state.view))
+                )
+            );
+
+            const desiredMs = role === 'ADMIN' ? 2500 : 5000;
+
+            if (!shouldPoll) {
+                if (state.registryPollId) {
+                    clearInterval(state.registryPollId);
+                    state.registryPollId = null;
+                    state.registryPollMs = null;
                 }
+                return;
             }
-        } catch (err) {
-            console.error("Registry polling error:", err);
+
+            // Restart polling if interval needs to change (e.g., role/view change)
+            if (state.registryPollId && state.registryPollMs !== desiredMs) {
+                clearInterval(state.registryPollId);
+                state.registryPollId = null;
+                state.registryPollMs = null;
+            }
+
+            if (state.registryPollId) return;
+            state.registryPollMs = desiredMs;
+
+            state.registryPollId = setInterval(() => {
+                fetchRegistry(true).then(() => {
+                    // Admin views need a re-render to show live progress/coins.
+                    if (role === 'ADMIN' && ['ADMIN_DASHBOARD', 'LEADERBOARD'].includes(state.view)) {
+                        render();
+                        return;
+                    }
+
+                    // Participant landing page uses DOM hooks for lock/unlock buttons.
+                    if (state.view === 'LANDING') updateActivityButtons();
+                });
+            }, desiredMs);
         }
-    }, 1000); // Poll every 1 second
-}
 
         function renderSyncStatus() {
             const el = document.getElementById('sync-indicator');
@@ -2001,6 +2010,11 @@ function renderLanding() {
         }
 
         window.adminApplyTimerExtension = async () => {
+            // Ensure we have a fresh registry; otherwise ALL teams can be empty and nothing happens.
+            if (!Array.isArray(state.registry) || state.registry.length === 0) {
+                await fetchRegistry(true);
+            }
+
             const spec = state.adminTimerExt || { teamName: 'ALL', target: 'performance', roundIndex: 1 };
             const teamName = spec.teamName || 'ALL';
             const target = spec.target || 'performance';
