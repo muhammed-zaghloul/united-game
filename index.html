@@ -6,6 +6,59 @@
     <title>Leading Talents</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .touch-dragging {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: none;
+}
+
+.drop-zone-highlight {
+    background-color: rgba(14, 165, 233, 0.2) !important;
+    transform: scale(1.05);
+    transition: all 0.2s ease;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5);
+}
+
+.nine-box-container * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* Auto-scroll zones for mobile drag */
+.nine-box-scroll-container {
+    position: relative;
+}
+
+.auto-scroll-trigger-top,
+.auto-scroll-trigger-bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    height: 80px;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.auto-scroll-trigger-top {
+    top: 140px; /* Below header */
+}
+
+.auto-scroll-trigger-bottom {
+    bottom: 0;
+}
+
+/* Better mobile grid sizing */
+@media (max-width: 640px) {
+    .nine-box-grid-cell {
+        min-height: 100px !important;
+        font-size: 10px !important;
+    }
+    
+    .nine-box-label-item {
+        font-size: 11px !important;
+        padding: 10px !important;
+    }
+}
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
         html { height: 100%; }
         *, *::before, *::after { box-sizing: border-box; }
@@ -20,6 +73,7 @@
         .spin-slow { animation: spin 3s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         .coin-diamond { scale: 1.6; }
+        .text-diamond { color: #63C0EE; }
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -84,9 +138,9 @@
             { id: "omar", name: "Omar", avatar: "img/omar-avatar.png", job: "Branch Manager", age: 28, exp: "4 Years", traits: [
                 "Very good knowledge of the retail KPIs, market dynamics, and financial management.",
                 "His manager feedback that he needs to focus on building a more collaborative and engaging team environment.",
-                "Manager feedback notes that he believes using manager’s authority is important to ensure seamless operations.",
+                "Manager feedback notes that he believes using manager's authority is important to ensure seamless operations.",
                 "Problem-solving skills. Handling store administrative and quality tasks efficiently & interested in learning more about managing inventory.",
-                "He has positive and proactive attitude in company projects, often going above and beyond to contribute to the team’s success. He is highly receptive to feedback and eagerly embraces change.",
+                "He has positive and proactive attitude in company projects, often going above and beyond to contribute to the team's success. He is highly receptive to feedback and eagerly embraces change.",
                 "Promoted to branch manager since 6 Years",
                 "Ach last year: 104%, Q1= 107%",
                 "Career aspiration: Operation & Sales Supervisor"
@@ -104,8 +158,8 @@
                 "Collaborative employee who always seeks for development & feedback and act accordingly.",
                 "Hasn`t passed the last assessment. Results were announced late Dec.",
                 "One of the top achievers. Demonstrates potential leadership qualities and is proactive in taking on new responsibilities and supporting company objectives.",
-                "His manager’s feedback indicates that he is reliable in situations where options and information are limited and time is constrained.",
-                "His manager’s wants to delegate more tasks to him to devote time to planning but he needs to free some of Omar tasks to do this task.",
+                "His manager's feedback indicates that he is reliable in situations where options and information are limited and time is constrained.",
+                "His manager's wants to delegate more tasks to him to devote time to planning but he needs to free some of Omar tasks to do this task.",
                 "His communications show he is a little bit disappointed during the last Quarter.",
                 "Ach last year: 108%, Q1 is 101%.",
                 "Career aspiration: Branch Manager then Operation & Sales Supervisor"
@@ -121,7 +175,7 @@
             ], answers: { k: 4, s: 1, a: 2 }, performancePotential: { performance: 1, potential: 1 } },
             { id: "ali", name: "Ali", avatar: "img/ali-avatar.png", job: "Pharmacist", age: 26, exp: "2 Years", traits: [
                 "Strong problem-solving abilities and quick decision- making.",
-                "Effective in handling customer queries and complaints and has overall fair product knowledge including cosmoceuticals. His manager’s feedback highlighted his expertise in selling cosmeceutical products and being the go to person in follow up tasks.",
+                "Effective in handling customer queries and complaints and has overall fair product knowledge including cosmoceuticals. His manager's feedback highlighted his expertise in selling cosmeceutical products and being the go to person in follow up tasks.",
                 "One of the best in identifying customers' real needs and providing the proper cross-selling or recommending upselling.",
                 "Prefers to work individually and when he works in a team, he tries to dominate, blames others and claiming the credit for himself leading to a tense work environment.",
                 "Ach last year: 110%, Q1=114%",
@@ -139,9 +193,6 @@
         ];
 
         // --- TIMER CONFIG ---
-        // Activity 1 (Performance): Trial=0, First=5, Second=5
-        // Activity 3 (KSA): Trial=0, First=8, Second=10
-        // Activity 2 (9-Box): total=5
         const TIMER_CONFIG = {
             performanceRounds: [0, 5, 5],
             ksaRounds: [0, 8, 10],
@@ -168,7 +219,6 @@
             performanceRoundIndex: null,
             ksaRoundIndex: null,
             timerId: null,
-            // timerStatusCache: { performance: null, ksa: null, ninebox: null },
             timerStatusCache: { performance: 'none', ksa: 'none', ninebox: 'none' },
             nineBoxPlacements: {},
             isNineBoxSubmitted: false,
@@ -179,17 +229,59 @@
             coinPopupDetails: { gold: 0, silver: 0, message: '' },
             rubricType: 'KSA',
             loginRole: 'PARTICIPANT',
+            loginRoleLocked: true,
             registry: [], 
             isSyncing: false,
             config: { 
                 activity1: true, 
                 activity2: false, 
                 activity3: false, 
-                activeProfiles: ["omar", "youssef", "faisal", "fahd", "ali", "hossam"] 
+                performanceRoundsEnabled: (TIMER_CONFIG.performanceRounds || []).map(() => true),
+                ksaRoundsEnabled: (TIMER_CONFIG.ksaRounds || []).map(() => true)
             }
         };
 
         if (state.team) state.team = normalizeTeam(state.team);
+
+        function getLockedLoginRoleFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                const roleParam = String(params.get('role') || '').toLowerCase();
+                const hash = String(window.location.hash || '').toLowerCase();
+
+                const isAdmin = roleParam === 'admin' || params.get('admin') === '1' || hash.includes('admin');
+                if (isAdmin) return 'ADMIN';
+
+                const isLearner = roleParam === 'learner' || roleParam === 'participant' || hash.includes('learner') || hash.includes('participant');
+                if (isLearner) return 'PARTICIPANT';
+
+                return 'PARTICIPANT';
+            } catch {
+                return 'PARTICIPANT';
+            }
+        }
+
+        state.loginRole = getLockedLoginRoleFromUrl();
+
+        function normalizeSessionConfig(cfg) {
+            const next = (cfg && typeof cfg === 'object') ? cfg : {};
+            next.activity1 = typeof next.activity1 === 'boolean' ? next.activity1 : true;
+            next.activity2 = typeof next.activity2 === 'boolean' ? next.activity2 : false;
+            next.activity3 = typeof next.activity3 === 'boolean' ? next.activity3 : false;
+
+            const perfLen = Array.isArray(TIMER_CONFIG.performanceRounds) ? TIMER_CONFIG.performanceRounds.length : 0;
+            const ksaLen = Array.isArray(TIMER_CONFIG.ksaRounds) ? TIMER_CONFIG.ksaRounds.length : 0;
+
+            const perf = Array.isArray(next.performanceRoundsEnabled) ? next.performanceRoundsEnabled : [];
+            const ksa = Array.isArray(next.ksaRoundsEnabled) ? next.ksaRoundsEnabled : [];
+
+            next.performanceRoundsEnabled = Array.from({ length: perfLen }, (_, i) => perf[i] !== false);
+            next.ksaRoundsEnabled = Array.from({ length: ksaLen }, (_, i) => ksa[i] !== false);
+
+            return next;
+        }
+
+        state.config = normalizeSessionConfig(state.config);
 
         function getTimersFromMeta(team) {
             if (!team || team.role !== 'PARTICIPANT') return null;
@@ -228,7 +320,6 @@
             if (!team.timers.ksaRounds || typeof team.timers.ksaRounds !== 'object') team.timers.ksaRounds = {};
             if (typeof team.timers.nineBoxEndMs !== 'number') team.timers.nineBoxEndMs = null;
 
-            // If backend doesn't persist `timers`, recover from meta entry.
             const metaTimers = getTimersFromMeta(team);
             if (metaTimers && typeof metaTimers === 'object') {
                 team.timers = {
@@ -246,7 +337,6 @@
                 };
             }
 
-            // Keep meta updated so API persistence works.
             upsertTimerMeta(team);
             return team;
         }
@@ -264,7 +354,6 @@
             if (!normalizedIncoming.completedNineBox && normalizedBase?.completedNineBox) {
                 normalizedIncoming.completedNineBox = normalizedBase.completedNineBox;
             }
-            // Merge timers conservatively so we don't drop local timer state on partial updates.
             normalizedIncoming.timers = {
                 ...(normalizedBase?.timers || {}),
                 ...(normalizedIncoming?.timers || {}),
@@ -287,12 +376,10 @@
 
         async function fetchRegistry(silent = false) {
             try {
-                // Add cache-busting to avoid stale GET responses from proxies or CDNs
                 const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
                 if (!res.ok) throw new Error("Network error");
                 const data = await res.json();
                 console.debug('fetchRegistry response:', data);
-                // Accept either a top-level array or an object with a `registry` array
                 let registryData = [];
                 if (Array.isArray(data)) registryData = data;
                 else if (data && Array.isArray(data.registry)) registryData = data.registry;
@@ -302,11 +389,10 @@
                 if (cfg && Array.isArray(cfg.completedProfiles)) {
                     const maybeConfig = cfg.completedProfiles.find((v) => typeof v === 'string' && v.trim().startsWith('{'));
                     if (maybeConfig) {
-                        try { state.config = JSON.parse(maybeConfig); } catch (err) {}
+                        try { state.config = normalizeSessionConfig(JSON.parse(maybeConfig)); } catch (err) {}
                     }
                 }
 
-                // Keep local team in sync (timers, coins, etc.) so admin changes reflect immediately.
                 if (state.team && state.team.name) {
                     const myName = String(state.team.name || '').toLowerCase();
                     const updatedSelf = state.registry.find(t => String(t.name || '').toLowerCase() === myName);
@@ -338,7 +424,6 @@
                 const result = await res.json();
                 console.debug('apiCall result:', result);
                 if (result && result.success) {
-                    // Prefer registry from response, but fallback to refetch if absent
                     if (Array.isArray(result.registry)) state.registry = result.registry.map((t) => normalizeTeam(t));
                     if (state.team) {
                         const lookup = String(payload?.team?.newName || payload?.team?.name || '').toLowerCase();
@@ -348,8 +433,6 @@
                             localStorage.setItem('team_data', JSON.stringify(state.team));
                         }
                     }
-                    // Immediately re-render so UI reflects changes without waiting
-                    // render();
                     return true;
                 }
                 return false;
@@ -378,15 +461,22 @@
         }
 
         function save() {
-                console.trace('SAVE CALLED');  // ← Add this to see the call stack
-
+            console.trace('SAVE CALLED');
             if (state.team) {
                 state.team = normalizeTeam(state.team);
                 localStorage.setItem('team_data', JSON.stringify(state.team));
                 pushTeamUpdate(state.team);
             }
         }
+
         function navigate(view, data = null) {
+            if (view === 'LEADERBOARD' && state.team?.role !== 'ADMIN') {
+                alert('Leaderboard is available for admins only.');
+                state.view = 'LANDING';
+                render();
+                window.scrollTo(0, 0);
+                return;
+            }
             state.view = view;
             if (data) state.selectedProfile = data;
             state.showCoinPopup = false;
@@ -445,20 +535,27 @@
                     state.isNineBoxSubmitted = false;
                 }
             }
-            // Keep admin/leaderboard views fresh: fetch registry, then re-render once data arrives.
-            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) {
-                fetchRegistry(true).then(() => {
-                    if (state.view === view) render();
-                });
-            }
+      
+            if (['LANDING', 'ADMIN_DASHBOARD', 'LEADERBOARD'].includes(view)) { fetchRegistry(true); }
 
             render();
             window.scrollTo(0, 0);
         }
 
-        function render() {
-                console.log('RENDER CALLED:', state.view); // ← Add this
+        let touchDragState = {
+            isDragging: false,
+            draggedElement: null,
+            draggedKey: null,
+            touchStartX: 0,
+            touchStartY: 0,
+            clone: null,
+            dropTarget: null,
+            autoScrollInterval: null,
+            lastTouchY: 0
+        };
 
+        function render() {
+            console.log('RENDER CALLED:', state.view);
             const root = document.getElementById('root');
             switch(state.view) {
                 case 'LOGIN': root.innerHTML = renderLogin(); break;
@@ -478,23 +575,10 @@
             renderSyncStatus();
             ensureTimerTick();
             ensureRegistryPolling();
+            if (state.view === 'NINE_BOX') {
+                setTimeout(() => initTouchDragAndDrop(), 50);
+            }
         }
-
-        // function ensureRegistryPolling() {
-        //     const isParticipant = Boolean(state.team && state.team.role === 'PARTICIPANT');
-        //     if (!isParticipant) {
-        //         if (state.registryPollId) {
-        //             clearInterval(state.registryPollId);
-        //             state.registryPollId = null;
-        //         }
-        //         return;
-        //     }
-        //     if (state.registryPollId) return;
-        //     // Poll to pick up admin timer extensions / config changes without requiring relog.
-        //     state.registryPollId = setInterval(() => {
-        //         fetchRegistry(true);
-        //     }, 5000);
-        // }
 
         function ensureRegistryPolling() {
             const isLoggedIn = Boolean(state.team);
@@ -518,7 +602,6 @@
                 return;
             }
 
-            // Restart polling if interval needs to change (e.g., role/view change)
             if (state.registryPollId && state.registryPollMs !== desiredMs) {
                 clearInterval(state.registryPollId);
                 state.registryPollId = null;
@@ -528,17 +611,50 @@
             if (state.registryPollId) return;
             state.registryPollMs = desiredMs;
 
-            state.registryPollId = setInterval(() => {
-                fetchRegistry(true).then(() => {
-                    // Admin views need a re-render to show live progress/coins.
+            state.registryPollId = setInterval(async () => {
+                try {
+                    const res = await fetch(API_URL + '?_=' + Date.now(), { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    
+                    let registryData = [];
+                    if (Array.isArray(data)) registryData = data;
+                    else if (data && Array.isArray(data.registry)) registryData = data.registry;
+                    
+                    state.registry = registryData.map((t) => normalizeTeam(t));
+                    
+                    const cfg = state.registry.find(t => t.name === '__SESSION_CONFIG__');
+                    if (cfg && Array.isArray(cfg.completedProfiles)) {
+                        const maybeConfig = cfg.completedProfiles.find((v) => typeof v === 'string' && v.trim().startsWith('{'));
+                        if (maybeConfig) {
+                            try { 
+                                state.config = normalizeSessionConfig(JSON.parse(maybeConfig));
+                            } catch (err) {}
+                        }
+                    }
+
+                    if (state.team?.role === 'PARTICIPANT' && state.team?.name) {
+                        const myName = String(state.team.name || '').toLowerCase();
+                        const updatedSelf = state.registry.find(t => String(t.name || '').toLowerCase() === myName);
+                        if (updatedSelf) {
+                            state.team = mergeTeamData(state.team, updatedSelf);
+                            localStorage.setItem('team_data', JSON.stringify(state.team));
+                            ensureTimerTick();
+                            updateTimerDisplays();
+                        }
+                    }
+                    
                     if (role === 'ADMIN' && ['ADMIN_DASHBOARD', 'LEADERBOARD'].includes(state.view)) {
                         render();
                         return;
                     }
 
-                    // Participant landing page uses DOM hooks for lock/unlock buttons.
-                    if (state.view === 'LANDING') updateActivityButtons();
-                });
+                    if (state.view === 'LANDING') {
+                        updateActivityButtons();
+                    }
+                } catch (err) {
+                    console.error("Registry polling error:", err);
+                }
             }, desiredMs);
         }
 
@@ -551,6 +667,7 @@
         }
 
         function renderLogin() {
+            const roleLabel = state.loginRole === 'ADMIN' ? 'Admin Login' : 'Learner Login';
             return `<div class="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-900">
                 <div class="w-full max-w-md bg-white rounded-[3rem] shadow-2xl p-6 sm:p-8 animate-pop">
                     <div class="text-center mb-8">
@@ -558,10 +675,11 @@
                         <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-none uppercase">United Pharmacy</h1>
                         <p class="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-3">Training Portal</p>
                     </div>
+                    ${state.loginRoleLocked ? `<div class="mb-8 text-center"><span class="inline-flex items-center justify-center px-4 py-2 bg-slate-100 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600">${roleLabel}</span></div>` : `
                     <div class="flex p-1 bg-slate-100 rounded-2xl mb-8">
                         <button onclick="setLoginRole('PARTICIPANT')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'PARTICIPANT' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Learner</button>
                         <button onclick="setLoginRole('ADMIN')" class="flex-1 py-3 text-xs font-black uppercase rounded-xl transition-all ${state.loginRole === 'ADMIN' ? 'bg-white shadow-sm text-sky-600' : 'text-slate-400'}">Admin</button>
-                    </div>
+                    </div>`}
                     <div class="space-y-6">
                         ${state.loginRole === 'PARTICIPANT' ? `<div><input type="text" id="teamInput" placeholder="Enter Team Name..." class="w-full px-5 py-4 sm:px-6 sm:py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl focus:border-sky-500 outline-none font-bold text-lg"></div>` : 
                         `<div class="space-y-4">
@@ -575,124 +693,94 @@
         }
 
         function updateActivityButtons() {
-    const activity1Btn = document.querySelector('[data-activity="activity1"]');
-    const activity2Btn = document.querySelector('[data-activity="activity2"]');
-    const activity3Btn = document.querySelector('[data-activity="activity3"]');
-    
-    if (activity1Btn) {
-        if (state.config.activity1) {
-            activity1Btn.onclick = () => navigate('PERFORMANCE_ROUNDS');
-            activity1Btn.classList.remove('opacity-50', 'grayscale');
-        } else {
-            activity1Btn.onclick = () => alert('Locked');
-            activity1Btn.classList.add('opacity-50', 'grayscale');
+            const activity1Btn = document.querySelector('[data-activity="activity1"]');
+            const activity2Btn = document.querySelector('[data-activity="activity2"]');
+            const activity3Btn = document.querySelector('[data-activity="activity3"]');
+            
+            if (activity1Btn) {
+                if (state.config.activity1) {
+                    activity1Btn.onclick = () => navigate('PERFORMANCE_ROUNDS');
+                    activity1Btn.classList.remove('opacity-50', 'grayscale');
+                } else {
+                    activity1Btn.onclick = () => alert('Locked');
+                    activity1Btn.classList.add('opacity-50', 'grayscale');
+                }
+            }
+            
+            if (activity2Btn) {
+                if (state.config.activity2) {
+                    activity2Btn.onclick = () => openNineBox();
+                    activity2Btn.classList.remove('opacity-50', 'grayscale');
+                } else {
+                    activity2Btn.onclick = () => alert('Locked');
+                    activity2Btn.classList.add('opacity-50', 'grayscale');
+                }
+            }
+            
+            if (activity3Btn) {
+                if (state.config.activity3) {
+                    activity3Btn.onclick = () => navigate('KSA_ROUNDS');
+                    activity3Btn.classList.remove('opacity-50', 'grayscale');
+                } else {
+                    activity3Btn.onclick = () => alert('Locked');
+                    activity3Btn.classList.add('opacity-50', 'grayscale');
+                }
+            }
         }
-    }
-    
-    if (activity2Btn) {
-        if (state.config.activity2) {
-            activity2Btn.onclick = () => openNineBox();
-            activity2Btn.classList.remove('opacity-50', 'grayscale');
-        } else {
-            activity2Btn.onclick = () => alert('Locked');
-            activity2Btn.classList.add('opacity-50', 'grayscale');
-        }
-    }
-    
-    if (activity3Btn) {
-        if (state.config.activity3) {
-            activity3Btn.onclick = () => navigate('KSA_ROUNDS');
-            activity3Btn.classList.remove('opacity-50', 'grayscale');
-        } else {
-            activity3Btn.onclick = () => alert('Locked');
-            activity3Btn.classList.add('opacity-50', 'grayscale');
-        }
-    }
-}
 
-function renderLanding() {
-    const isAdmin = state.team.role === 'ADMIN';
-    return `<div class="min-h-screen bg-slate-50">
-        <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
-                <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
-            </div>
-            <div class="flex items-center gap-3">
-                <div id="sync-indicator"></div>
-                <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
-            </div>
-        </header>
-        <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
-            <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
-            <div class="grid gap-6">
-                ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
-                    <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
-                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
-                </button>` : `
-                <button data-activity="activity1" onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
-                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
-                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance &amp; Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
-                </button>
-                <button data-activity="activity2" onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
-                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
-                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
-                </button>
-                <button data-activity="activity3" onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
-                    <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
-                </button>
-                `}
-                <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
-                    <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-                    <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
-                </button>
-            </div>
-        </main>
-    </div>`;
-}
-        // function renderLanding() {
-        //     const isAdmin = state.team.role === 'ADMIN';
-        //     return `<div class="min-h-screen bg-slate-50">
-        //         <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
-        //             <div class="flex items-center gap-3">
-        //                 <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
-        //                 <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
-        //             </div>
-        //             <div class="flex items-center gap-3">
-        //                 <div id="sync-indicator"></div>
-        //                 <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
-        //             </div>
-        //         </header>
-        //         <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
-        //             <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
-        //             <div class="grid gap-6">
-        //                 ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
-        //                     <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
-        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
-        //                 </button>` : `
-        //                 <button onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
-        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
-        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance & Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
-        //                 </button>
-        //                 <button onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
-        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
-        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
-        //                 </button>
-        //                 <button onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
-        //                     <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
-        //                 </button>
-        //                 `}
-        //                 <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
-        //                     <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
-        //                     <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
-        //                 </button>
-        //             </div>
-        //         </main>
-        //     </div>`;
-        // }
-
+        function renderLanding() {
+            const isAdmin = state.team.role === 'ADMIN';
+            return `<div class="min-h-screen bg-slate-50">
+                <header class="glass sticky top-0 z-40 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 border-b shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
+                        <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
+                    </div>
+                    ${!isAdmin ? `
+                    <div class="flex items-center gap-2">
+                        <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 font-black text-sm flex items-center gap-2">
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-4 h-4 coin-diamond" />
+                            <span class="text-diamond">${state.team.goldCoins}</span>
+                        </div>
+                        <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 font-black text-sm flex items-center gap-2">
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
+                            <span class="text-yellow-700">${state.team.silverCoins}</span>
+                        </div>
+                    </div>` : ''}
+                    <div class="flex items-center gap-3">
+                        <div id="sync-indicator"></div>
+                        <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
+                    </div>
+                </header>
+                <main class="p-4 sm:p-6 max-w-2xl mx-auto space-y-8 animate-pop">
+                    <div class="py-2 sm:py-4"><h1 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">${isAdmin ? 'Control Center' : 'Training Modules'}</h1></div>
+                    <div class="grid gap-6">
+                        ${isAdmin ? `<button onclick="navigate('ADMIN_DASHBOARD')" class="w-full bg-slate-900 text-white p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group">
+                            <div class="bg-sky-600 p-4 sm:p-5 rounded-[2rem]"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black">Admin Dashboard</h3><p class="text-slate-400 font-medium text-sm">Manage sessions and teams.</p></div>
+                        </button>
+                        <button onclick="navigate('LEADERBOARD')" class="w-full bg-white border-2 border-slate-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 transition-all active:scale-[0.98]">
+                            <div class="bg-slate-50 p-4 sm:p-5 rounded-[2rem] text-slate-600"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Leaderboard</h3><p class="text-slate-500 font-medium text-sm">Live team rankings.</p></div>
+                        </button>` : `
+                        <button data-activity="activity1" onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance &amp; Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
+                        </button>
+                        <button data-activity="activity2" onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
+                        </button>
+                        <button data-activity="activity3" onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
+                            <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
+                        </button>
+                        `}
+                    </div>
+                </main>
+            </div>`;
+        }
+       
         function renderAdminDashboard() {
             const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
             const timerTargets = [
@@ -776,9 +864,26 @@ function renderLanding() {
                             </div>
                         </div>
                         <div class="bg-white p-5 sm:p-8 rounded-[2.5rem] shadow-xl space-y-6">
-                            <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Available Profiles</h3>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                ${PROFILES.map(p => `<button onclick="toggleProfileStatus('${p.id}')" class="p-3 rounded-xl border-2 text-[10px] font-black uppercase ${state.config.activeProfiles.includes(p.id) ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}">${p.name.split(' ')[0]}</button>`).join('')}
+                            <h3 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Rounds Controls</h3>
+                            <div class="space-y-4">
+                                <div class="space-y-2">
+                                    <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Activity 1 Rounds</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        ${PERFORMANCE_ROUNDS.map((r, idx) => {
+                                            const enabled = state.config?.performanceRoundsEnabled?.[idx] !== false;
+                                            return `<button onclick="toggleRoundStatus('performance', ${idx})" class="p-3 rounded-xl border-2 text-[10px] font-black uppercase ${enabled ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}">${r.label}</button>`;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                <div class="space-y-2">
+                                    <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Activity 3 Rounds</h4>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        ${KSA_ROUNDS.map((r, idx) => {
+                                            const enabled = state.config?.ksaRoundsEnabled?.[idx] !== false;
+                                            return `<button onclick="toggleRoundStatus('ksa', ${idx})" class="p-3 rounded-xl border-2 text-[10px] font-black uppercase ${enabled ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}">${r.label}</button>`;
+                                        }).join('')}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -798,6 +903,7 @@ function renderLanding() {
                                         const completedPerformance = Array.isArray(t.completedPerformanceProfiles) ? t.completedPerformanceProfiles : [];
                                         const completedNineBox = t.completedNineBox ? 1 : 0;
                                         const activityCount = [completedPerformance.length > 0, completedNineBox > 0, profiles.length > 0].filter(Boolean).length;
+                                        const coinBreakdown = getTeamCoinsBreakdown(t);
                                         return `<tr class="hover:bg-slate-50/80 transition-colors">
                                             <td class="p-4 sm:p-6 font-black text-slate-800">${t.name}</td>
                                             <td class="p-4 sm:p-6">
@@ -808,8 +914,13 @@ function renderLanding() {
                                             </td>
                                             <td class="p-4 sm:p-6">
                                                 <div class="flex gap-4">
-                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">DIAMOND</span><span class="font-black text-yellow-600">${t.goldCoins}</span></div>
-                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-slate-400">GOLD</span><span class="font-black text-slate-400">${t.silverCoins}</span></div>
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-diamond">DIAMOND</span><span class="font-black text-diamond">${t.goldCoins}</span></div>
+                                                    <div class="flex flex-col"><span class="text-[8px] font-black text-yellow-600">GOLD</span><span class="font-black text-yellow-600">${t.silverCoins}</span></div>
+                                                </div>
+                                                <div class="mt-3 space-y-1">
+                                                    <div class="text-[9px] font-black text-slate-500">${formatRoundGoldOnlyLine('A1', coinBreakdown.performance)}</div>
+                                                    <div class="text-[9px] font-black text-slate-500">${formatRoundCoinsLine('A3', coinBreakdown.ksa)}</div>
+                                                    <div class="text-[9px] font-black text-slate-500">${formatActivityGoldOnlyLine('A2', coinBreakdown.ninebox)}</div>
                                                 </div>
                                             </td>
                                             <td class="p-4 sm:p-6 text-right space-x-2">
@@ -832,6 +943,7 @@ function renderLanding() {
         }
 
         function renderPerformanceSelection() {
+            const isAdmin = state.team?.role === 'ADMIN';
             const completed = state.team.completedPerformanceProfiles || [];
             const completedIds = getCompletedIds(completed);
             const activeIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
@@ -849,7 +961,7 @@ function renderLanding() {
                         ${renderTimerPill('timer-performance', timerText)}
                     </div>
                     <div class="flex items-center justify-end gap-2">
-                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>
+                        ${isAdmin ? `<button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>` : ''}
                     </div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto">
@@ -860,15 +972,13 @@ function renderLanding() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
                         const isDone = completed.some(c => (typeof c === 'string' ? c === p.id : c.id === p.id));
-                        const isLocked = !state.config.activeProfiles.includes(p.id);
-                        return `<div onclick="${isLocked ? '' : `navigate('PERFORMANCE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
-                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
+                        return `<div onclick="${`navigate('PERFORMANCE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
+                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : 'border-white hover:border-sky-300 active:scale-95'}">
                             <div class="relative">
                                           <img src="${p.avatar}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
                                 ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>' : ''}
-                                ${isLocked ? '<div class="absolute inset-0 flex items-center justify-center text-slate-400"><svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg></div>' : ''}
                             </div>
-                            <div class="mt-3"><h4 class="font-black text-slate-800 text-sm tracking-tight">${isLocked ? 'Locked' : p.name}</h4></div>
+                            <div class="mt-3"><h4 class="font-black text-slate-800 text-sm tracking-tight">${p.name}</h4></div>
                         </div>`;
                     }).join('')}
                     </div>
@@ -891,7 +1001,9 @@ function renderLanding() {
                     </div>
                     ${PERFORMANCE_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
-                        return `<button onclick="${isActive ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                        const isEnabled = state.config?.performanceRoundsEnabled?.[idx] !== false;
+                        const canOpen = isActive && isEnabled;
+                        return `<button onclick="${canOpen ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${canOpen ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
                     }).join('')}
@@ -900,6 +1012,7 @@ function renderLanding() {
         }
 
         function renderProfileSelection() {
+            const isAdmin = state.team?.role === 'ADMIN';
             const completed = state.team.completedProfiles || [];
             const completedIds = getCompletedIds(completed);
             const activeIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
@@ -917,7 +1030,7 @@ function renderLanding() {
                         ${renderTimerPill('timer-ksa', timerText)}
                     </div>
                     <div class="flex items-center justify-end gap-2">
-                        <button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 0 01-2-2z"></path></svg></button>
+                        ${isAdmin ? `<button onclick="navigate('LEADERBOARD')" class="bg-sky-600 text-white p-2 rounded-xl"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg></button>` : ''}
                     </div>
                 </header>
                 <main class="p-4 sm:p-6 max-w-xl mx-auto">
@@ -928,15 +1041,13 @@ function renderLanding() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     ${roundProfiles.map(p => {
                         const isDone = completed.some(c => (typeof c === 'string' ? c === p.id : c.id === p.id));
-                        const isLocked = !state.config.activeProfiles.includes(p.id);
-                        return `<div onclick="${isLocked ? '' : `navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
-                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : isLocked ? 'opacity-40 border-dashed border-slate-300 grayscale' : 'border-white hover:border-sky-300 active:scale-95'}">
+                        return `<div onclick="${`navigate('PROFILE_EVALUATION', ${JSON.stringify(p).replace(/"/g, '&quot;')})`}" 
+                                      class="bg-white p-4 sm:p-5 rounded-[2.5rem] shadow-xl border-2 transition-all ${isDone ? 'border-green-400 bg-green-50/50' : 'border-white hover:border-sky-300 active:scale-95'}">
                             <div class="relative">
                                           <img src="${p.avatar}" class="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white shadow-lg object-cover aspect-square" onerror="this.src='img/default-avatar.png'">
                                 ${isDone ? '<div class="absolute -bottom-1 -right-1 bg-green-500 text-white p-1.5 rounded-full border-4 shadow-md"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"></path></svg></div>' : ''}
-                                ${isLocked ? '<div class="absolute inset-0 flex items-center justify-center text-slate-400"><svg class="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg></div>' : ''}
                             </div>
-                            <div class="mt-3"><h4 class="font-black text-slate-800 text-sm tracking-tight">${isLocked ? 'Locked' : p.name}</h4></div>
+                            <div class="mt-3"><h4 class="font-black text-slate-800 text-sm tracking-tight">${p.name}</h4></div>
                         </div>`;
                     }).join('')}
                     </div>
@@ -959,7 +1070,9 @@ function renderLanding() {
                     </div>
                     ${KSA_ROUNDS.map((round, idx) => {
                         const isActive = idx <= activeIndex;
-                        return `<button onclick="${isActive ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${isActive ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                        const isEnabled = state.config?.ksaRoundsEnabled?.[idx] !== false;
+                        const canOpen = isActive && isEnabled;
+                        return `<button onclick="${canOpen ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${canOpen ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
                     }).join('')}
@@ -977,19 +1090,118 @@ function renderLanding() {
             return state.team.completedProfiles.find(cp => (typeof cp === 'string' ? cp === profileId : cp.id === profileId)) || null;
         }
 
-        // Activity 1 (Performance & Potential)
         const PERFORMANCE_ROUNDS = [
             { label: 'Trial Round', ids: ['fahd'] },
             { label: 'First Round', ids: ['hossam', 'youseff'] },
             { label: 'Second Round', ids: ['ali', 'omar', 'faisal'] }
         ];
 
-        // Activity 3 (KSA)
         const KSA_ROUNDS = [
             { label: 'Trial Round', ids: ['fahd'] },
             { label: 'First Round', ids: ['faisal', 'ali'] },
             { label: 'Second Round', ids: ['hossam', 'omar', 'youseff'] }
         ];
+
+        function findProfileById(profileId) {
+            return PROFILES.find((p) => p.id === profileId) || null;
+        }
+
+        function getRoundIndexForProfile(activity, profileId) {
+            const rounds = activity === 'performance' ? PERFORMANCE_ROUNDS : KSA_ROUNDS;
+            const idx = rounds.findIndex((r) => Array.isArray(r.ids) && r.ids.includes(profileId));
+            return idx >= 0 ? idx : null;
+        }
+
+        function computeKsaCoins(entry) {
+            const pid = typeof entry === 'string' ? entry : entry?.id;
+            if (!pid) return { diamond: 0, gold: 0 };
+            if (pid === 'fahd') return { diamond: 0, gold: 0 };
+            const p = findProfileById(pid);
+            if (!p) return { diamond: 0, gold: 0 };
+            if (!entry || typeof entry !== 'object') return { diamond: 0, gold: 0 };
+            const k = entry.k;
+            const s = entry.s;
+            const a = entry.a;
+            if (k === undefined || s === undefined || a === undefined) return { diamond: 0, gold: 0 };
+            const correctCount = [k === p.answers.k, s === p.answers.s, a === p.answers.a].filter(Boolean).length;
+            return { diamond: correctCount === 3 ? 1 : 0, gold: correctCount };
+        }
+
+        function computePerformanceCoins(entry) {
+            const pid = typeof entry === 'string' ? entry : entry?.id;
+            if (!pid) return { diamond: 0, gold: 0 };
+            if (pid === 'fahd') return { diamond: 0, gold: 0 };
+            const p = findProfileById(pid);
+            if (!p) return { diamond: 0, gold: 0 };
+            if (!entry || typeof entry !== 'object') return { diamond: 0, gold: 0 };
+            const performance = entry.performance;
+            const potential = entry.potential;
+            if (performance === undefined || potential === undefined) return { diamond: 0, gold: 0 };
+            const performanceCorrect = performance === p.performancePotential.performance;
+            const potentialCorrect = potential === p.performancePotential.potential;
+            const gold = (performanceCorrect ? 1 : 0) + (potentialCorrect ? 2 : 0);
+            return { diamond: 0, gold };
+        }
+
+        function getTeamCoinsBreakdown(team) {
+            const perfRounds = Array.from({ length: PERFORMANCE_ROUNDS.length }, () => ({ diamond: 0, gold: 0 }));
+            const ksaRounds = Array.from({ length: KSA_ROUNDS.length }, () => ({ diamond: 0, gold: 0 }));
+            const nine = { diamond: 0, gold: 0 };
+
+            const perfList = Array.isArray(team?.completedPerformanceProfiles) ? team.completedPerformanceProfiles : [];
+            perfList.forEach((entry) => {
+                const pid = typeof entry === 'string' ? entry : entry?.id;
+                if (!pid) return;
+                const roundIdx = typeof entry === 'object' && entry && typeof entry.roundIndex === 'number'
+                    ? entry.roundIndex
+                    : getRoundIndexForProfile('performance', pid);
+                if (roundIdx === null || typeof roundIdx !== 'number') return;
+                if (!perfRounds[roundIdx]) return;
+                const coins = (typeof entry === 'object' && entry && entry.coins && typeof entry.coins === 'object')
+                    ? { diamond: Number(entry.coins.diamond || 0), gold: Number(entry.coins.gold || 0) }
+                    : computePerformanceCoins(entry);
+                perfRounds[roundIdx].diamond += coins.diamond || 0;
+                perfRounds[roundIdx].gold += coins.gold || 0;
+            });
+
+            const ksaList = (Array.isArray(team?.completedProfiles) ? team.completedProfiles : [])
+                .filter((cp) => !(typeof cp === 'object' && cp && cp.id === TIMER_META_ID));
+            ksaList.forEach((entry) => {
+                const pid = typeof entry === 'string' ? entry : entry?.id;
+                if (!pid) return;
+                const roundIdx = typeof entry === 'object' && entry && typeof entry.roundIndex === 'number'
+                    ? entry.roundIndex
+                    : getRoundIndexForProfile('ksa', pid);
+                if (roundIdx === null || typeof roundIdx !== 'number') return;
+                if (!ksaRounds[roundIdx]) return;
+                const coins = (typeof entry === 'object' && entry && entry.coins && typeof entry.coins === 'object')
+                    ? { diamond: Number(entry.coins.diamond || 0), gold: Number(entry.coins.gold || 0) }
+                    : computeKsaCoins(entry);
+                ksaRounds[roundIdx].diamond += coins.diamond || 0;
+                ksaRounds[roundIdx].gold += coins.gold || 0;
+            });
+
+            if (team?.completedNineBox && typeof team.completedNineBox === 'object') {
+                const nb = team.completedNineBox;
+                nine.diamond += Number(nb.goldEarned || 0);
+                nine.gold += Number(nb.silverEarned || 0);
+            }
+
+            return { performance: perfRounds, ksa: ksaRounds, ninebox: nine };
+        }
+
+        function formatRoundCoinsLine(prefix, rounds) {
+            return `${prefix}: ` + rounds.map((c, idx) => `R${idx + 1} D${c.diamond} G${c.gold}`).join(' | ');
+        }
+
+        function formatRoundGoldOnlyLine(prefix, rounds) {
+            return `${prefix}: ` + rounds.map((c, idx) => `R${idx + 1} G${c.gold}`).join(' | ');
+        }
+
+        function formatActivityGoldOnlyLine(prefix, coins) {
+            const gold = Number(coins?.gold || 0);
+            return `${prefix}: G${gold}`;
+        }
 
         function getRoundDurationMinutes(activity, roundIndex) {
             const idx = typeof roundIndex === 'number' ? roundIndex : 0;
@@ -1049,14 +1261,77 @@ function renderLanding() {
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
+        function isRoundFullyCompleted(activity, roundIndex) {
+            if (!state.team) return false;
+            const rounds = activity === 'performance' ? PERFORMANCE_ROUNDS : KSA_ROUNDS;
+            const completedList = activity === 'performance' 
+                ? state.team.completedPerformanceProfiles 
+                : state.team.completedProfiles;
+            const round = rounds[roundIndex];
+            if (!round) return false;
+            const completedIds = getCompletedIds(completedList || []);
+            return round.ids.every(id => completedIds.includes(id));
+        }
+
         function getRoundTimerText(activity, roundIndex) {
             const minutes = getRoundDurationMinutes(activity, roundIndex);
             if (minutes <= 0) return '';
+            
+            if (isRoundFullyCompleted(activity, roundIndex)) return 'Completed';
+            
             const endMs = getTeamRoundEndMs(state.team, activity, roundIndex);
             if (!endMs) return 'Not started';
             const left = getTimeLeftSeconds(endMs);
             if (left <= 0) return 'Time Up';
             return formatTimer(left);
+        }
+
+        function renderTimerPill(id, text) {
+            if (!text) return '';
+            const isUp = text === 'Time Up';
+            const isNotStarted = text === 'Not started';
+            const isCompleted = text === 'Completed';
+            
+            let isCritical = false;
+            if (!isUp && !isNotStarted && !isCompleted && text.includes(':')) {
+                const [minutes, seconds] = text.split(':').map(Number);
+                isCritical = minutes === 0 && seconds < 30;
+            }
+            
+            let bgColor, borderColor, textColor, extraClasses = '';
+            
+            if (isCompleted) {
+                bgColor = 'bg-green-600';
+                borderColor = 'border-green-800';
+                textColor = 'text-white';
+                extraClasses = 'ring-4 ring-green-300 ring-opacity-50';
+            } else if (isUp) {
+                bgColor = 'bg-red-600';
+                borderColor = 'border-red-800';
+                textColor = 'text-white';
+                extraClasses = 'animate-pulse ring-4 ring-red-300 ring-opacity-50';
+            } else if (isNotStarted) {
+                bgColor = 'bg-slate-200';
+                borderColor = 'border-slate-400';
+                textColor = 'text-slate-700';
+            } else if (isCritical) {
+                bgColor = 'bg-orange-500';
+                borderColor = 'border-orange-700';
+                textColor = 'text-white';
+                extraClasses = 'animate-pulse ring-4 ring-orange-300 ring-opacity-50';
+            } else {
+                bgColor = 'bg-gradient-to-r from-teal-600 to-cyan-600';
+                borderColor = 'border-teal-700';
+                textColor = 'text-white';
+                extraClasses = 'animate-pulse ring-4 ring-orange-300 ring-opacity-50';
+            }
+            
+            const icon = isCompleted ? '✅' : '⏱️';
+            
+            return `<div class="px-8 py-4 rounded-3xl border-2 text-xl sm:text-2xl font-black uppercase tracking-widest text-center tabular-nums shadow-2xl transform hover:scale-110 transition-all duration-300 ${bgColor} ${borderColor} ${textColor} ${extraClasses}" 
+                    style="box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2), 0 10px 10px -5px rgba(0,0,0,0.1);">
+                <span id="${id}" class="inline-block min-w-[140px] sm:min-w-[160px] drop-shadow-md">${icon} ${text}</span>
+            </div>`;
         }
 
         function getNineBoxTimerText() {
@@ -1188,12 +1463,6 @@ function renderLanding() {
             return Date.now() >= endMs;
         }
 
-        function renderTimerPill(id, text) {
-            if (!text) return '';
-            const isUp = text === 'Time Up';
-            return `<div class="px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black uppercase tracking-widest text-center tabular-nums ${isUp ? 'bg-red-50 border-red-200 text-red-700' : text === 'Not started' ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}"><span id="${id}">${text}</span></div>`;
-        }
-
         function getCompletedIds(list) {
             if (!Array.isArray(list)) return [];
             return list.map((entry) => (typeof entry === 'string' ? entry : entry.id));
@@ -1239,11 +1508,11 @@ function renderLanding() {
                     <div class="flex flex-wrap justify-end gap-2 items-center">
                         <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
                             <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                            <span>${state.team.goldCoins}</span>
+                            <span class="text-diamond">${state.team.goldCoins}</span>
                         </div>
                         <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                            <span>${state.team.silverCoins}</span>
+                            <span class="text-yellow-800">${state.team.silverCoins}</span>
                         </div>
                     </div>
                 </header>
@@ -1265,6 +1534,208 @@ function renderLanding() {
             </div>`;
         }
 
+        // ====================================
+        // IMPROVED MOBILE TOUCH DRAG & DROP
+        // ====================================
+        
+        function initTouchDragAndDrop() {
+            const draggables = document.querySelectorAll('[draggable="true"]');
+            const dropZones = document.querySelectorAll('[ondrop]');
+            
+            draggables.forEach(elem => {
+                elem.removeEventListener('touchstart', handleTouchStart);
+                elem.removeEventListener('touchmove', handleTouchMove);
+                elem.removeEventListener('touchend', handleTouchEnd);
+                
+                elem.addEventListener('touchstart', handleTouchStart, { passive: false });
+                elem.addEventListener('touchmove', handleTouchMove, { passive: false });
+                elem.addEventListener('touchend', handleTouchEnd, { passive: false });
+            });
+            
+            dropZones.forEach(zone => {
+                zone.removeEventListener('touchmove', handleDropZoneTouchMove);
+                zone.addEventListener('touchmove', handleDropZoneTouchMove, { passive: false });
+            });
+        }
+
+        function handleTouchStart(e) {
+            if (state.isNineBoxSubmitted || isNineBoxTimeUp()) {
+                e.preventDefault();
+                return;
+            }
+            
+            const target = e.currentTarget;
+            const key = extractProfileKey(target);
+            
+            if (!key) return;
+            
+            e.preventDefault();
+            
+            touchDragState.isDragging = true;
+            touchDragState.draggedElement = target;
+            touchDragState.draggedKey = key;
+            touchDragState.touchStartX = e.touches[0].clientX;
+            touchDragState.touchStartY = e.touches[0].clientY;
+            touchDragState.lastTouchY = e.touches[0].clientY;
+            
+            const clone = target.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.pointerEvents = 'none';
+            clone.style.zIndex = '9999';
+            clone.style.opacity = '0.8';
+            clone.style.transform = 'scale(1.1)';
+            clone.style.left = touchDragState.touchStartX + 'px';
+            clone.style.top = touchDragState.touchStartY + 'px';
+            clone.style.width = target.offsetWidth + 'px';
+            clone.classList.add('touch-dragging');
+            
+            document.body.appendChild(clone);
+            touchDragState.clone = clone;
+            
+            target.style.opacity = '0.3';
+            state.draggingProfileId = key;
+            
+            // Start auto-scroll monitoring
+            startAutoScroll();
+        }
+
+        function handleTouchMove(e) {
+            if (!touchDragState.isDragging || !touchDragState.clone) return;
+            
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            touchDragState.lastTouchY = touch.clientY;
+            
+            touchDragState.clone.style.left = touch.clientX - (touchDragState.clone.offsetWidth / 2) + 'px';
+            touchDragState.clone.style.top = touch.clientY - (touchDragState.clone.offsetHeight / 2) + 'px';
+            
+            const elementUnderFinger = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            let dropZone = elementUnderFinger;
+            while (dropZone && !dropZone.hasAttribute('ondrop')) {
+                dropZone = dropZone.parentElement;
+            }
+            
+            document.querySelectorAll('.drop-zone-highlight').forEach(el => {
+                el.classList.remove('drop-zone-highlight');
+            });
+            
+            if (dropZone && dropZone.hasAttribute('ondrop')) {
+                dropZone.classList.add('drop-zone-highlight');
+                touchDragState.dropTarget = dropZone;
+            } else {
+                touchDragState.dropTarget = null;
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchDragState.isDragging) return;
+            
+            e.preventDefault();
+            
+            stopAutoScroll();
+            
+            if (touchDragState.clone) {
+                touchDragState.clone.remove();
+            }
+            
+            if (touchDragState.draggedElement) {
+                touchDragState.draggedElement.style.opacity = '1';
+            }
+            
+            document.querySelectorAll('.drop-zone-highlight').forEach(el => {
+                el.classList.remove('drop-zone-highlight');
+            });
+            
+            if (touchDragState.dropTarget) {
+                const ondropAttr = touchDragState.dropTarget.getAttribute('ondrop');
+                
+                if (ondropAttr && ondropAttr.includes('handleDrop')) {
+                    const match = ondropAttr.match(/handleDrop\(event,\s*(\d+),\s*(\d+)\)/);
+                    if (match) {
+                        const performance = parseInt(match[1]);
+                        const potential = parseInt(match[2]);
+                        
+                        const key = touchDragState.draggedKey;
+                        if (key) {
+                            const existing = Object.keys(state.nineBoxPlacements).find(
+                                id => state.nineBoxPlacements[id].performance === performance && 
+                                      state.nineBoxPlacements[id].potential === potential
+                            );
+                            if (existing && existing !== key) {
+                                delete state.nineBoxPlacements[existing];
+                            }
+                            state.nineBoxPlacements[key] = { performance, potential };
+                            render();
+                        }
+                    }
+                }
+                else if (ondropAttr && ondropAttr.includes('handleDropToPool')) {
+                    const key = touchDragState.draggedKey;
+                    if (key && state.nineBoxPlacements[key]) {
+                        delete state.nineBoxPlacements[key];
+                        render();
+                    }
+                }
+            }
+            
+            touchDragState.isDragging = false;
+            touchDragState.draggedElement = null;
+            touchDragState.draggedKey = null;
+            touchDragState.clone = null;
+            touchDragState.dropTarget = null;
+            state.draggingProfileId = null;
+        }
+
+        function handleDropZoneTouchMove(e) {
+            if (touchDragState.isDragging) {
+                e.preventDefault();
+            }
+        }
+
+        function extractProfileKey(element) {
+            const ondragstart = element.getAttribute('ondragstart');
+            if (ondragstart) {
+                const match = ondragstart.match(/handleDragStart\(['"]([^'"]+)['"]\)/);
+                if (match) return match[1];
+            }
+            return null;
+        }
+
+        // Auto-scroll functionality for mobile drag
+        function startAutoScroll() {
+            if (touchDragState.autoScrollInterval) return;
+            
+            touchDragState.autoScrollInterval = setInterval(() => {
+                if (!touchDragState.isDragging) {
+                    stopAutoScroll();
+                    return;
+                }
+                
+                const scrollZoneHeight = 80;
+                const scrollSpeed = 8;
+                const windowHeight = window.innerHeight;
+                const touchY = touchDragState.lastTouchY;
+                
+                // Scroll down if near bottom
+                if (touchY > windowHeight - scrollZoneHeight) {
+                    window.scrollBy(0, scrollSpeed);
+                }
+                // Scroll up if near top
+                else if (touchY < scrollZoneHeight + 140) { // 140 = header height
+                    window.scrollBy(0, -scrollSpeed);
+                }
+            }, 16); // ~60fps
+        }
+
+        function stopAutoScroll() {
+            if (touchDragState.autoScrollInterval) {
+                clearInterval(touchDragState.autoScrollInterval);
+                touchDragState.autoScrollInterval = null;
+            }
+        }
+
         function renderNineBox() {
             const timeUp = isNineBoxTimeUp();
             const savedNineBox = state.team?.completedNineBox || null;
@@ -1277,7 +1748,7 @@ function renderLanding() {
             const placedKeys = Object.keys(placements);
             const canSubmit = placedKeys.length === labels.length;
 
-            return `<div class="min-h-screen bg-slate-50 pb-32">
+            return `<div class="min-h-screen bg-slate-50 pb-32 nine-box-scroll-container">
                 <header class="glass sticky top-0 z-40 p-4 border-b grid grid-cols-[auto,1fr,auto] items-center gap-3">
                     <div class="flex items-center gap-2 min-w-0">
                         <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
@@ -1287,73 +1758,86 @@ function renderLanding() {
                         ${renderTimerPill('timer-ninebox', getNineBoxTimerText())}
                     </div>
                     <div class="flex flex-wrap justify-end gap-2 items-center">
-                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
-                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                            <span>${state.team.goldCoins}</span>
+                        <div class="bg-yellow-100 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
+                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-4 h-4 sm:w-5 sm:h-5 coin-diamond" />
+                            <span class="text-diamond">${state.team.goldCoins}</span>
                         </div>
-                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                            <span>${state.team.silverCoins}</span>
+                        <div class="bg-slate-100 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
+                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4 sm:w-5 sm:h-5" />
+                            <span class="text-yellow-800">${state.team.silverCoins}</span>
                         </div>
                     </div>
                 </header>
 
-                <main class="p-4 sm:p-6 max-w-4xl mx-auto space-y-8 animate-pop">
+                <main class="p-3 sm:p-6 max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-pop nine-box-container">
                     <section>
                         <div class="flex items-center justify-between mb-3">
-                            <h2 class="text-lg font-black text-slate-800">Box Names</h2>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Drag into grid</p>
+                            <h2 class="text-base sm:text-lg font-black text-slate-800">Box Names</h2>
+                            <p class="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400">Drag into grid</p>
                         </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)">
                             ${labels.map(item => {
                                 const isPlaced = Boolean(placements[item.key]);
-                                return `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" ondragstart="handleDragStart('${item.key}')" ondragend="handleDragEnd()" class="${isPlaced ? 'opacity-40' : ''} bg-white border-2 border-slate-200 rounded-xl p-3 text-center shadow-sm font-black text-xs text-slate-700">
+                                return `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" 
+                                            ondragstart="handleDragStart('${item.key}')" 
+                                            ondragend="handleDragEnd()" 
+                                            class="${isPlaced ? 'opacity-40' : ''} nine-box-label-item bg-white border-2 border-slate-200 rounded-xl p-2.5 sm:p-3 text-center shadow-sm font-black text-[11px] sm:text-xs text-slate-700 min-h-[50px] flex items-center justify-center">
                                     ${item.label}
                                 </div>`;
                             }).join('')}
                         </div>
                     </section>
 
-                    <section class="bg-white rounded-[2.5rem] p-4 sm:p-6 shadow-2xl overflow-x-auto sm:overflow-visible">
-                        <div class="min-w-[520px] sm:min-w-0">
-                        <div class="grid grid-cols-[36px,1fr] gap-3 items-stretch">
-                            <div class="flex flex-col items-center h-full">
-                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 [writing-mode:vertical-rl] rotate-180 mb-2">Potential</span>
-                                <div class="flex-1 flex flex-col justify-between text-[10px] font-black uppercase text-slate-400">
-                                    <span>High</span>
-                                    <span>Moderate</span>
-                                    <span>Low</span>
+                    <section class="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-3 sm:p-6 shadow-2xl overflow-x-auto">
+                        <div class="min-w-[320px] sm:min-w-0">
+                            <div class="grid grid-cols-[24px,1fr] sm:grid-cols-[36px,1fr] gap-2 sm:gap-3 items-stretch">
+                                <div class="flex flex-col items-center h-full">
+                                    <span class="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 [writing-mode:vertical-rl] rotate-180 mb-1 sm:mb-2">Potential</span>
+                                    <div class="flex-1 flex flex-col justify-between text-[8px] sm:text-[10px] font-black uppercase text-slate-400">
+                                        <span>High</span>
+                                        <span>Mod</span>
+                                        <span>Low</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-1.5 sm:gap-3">
+                                    ${gridCells.map(cell => {
+                                        const occupantKey = Object.keys(placements).find(key => placements[key].performance === cell.performance && placements[key].potential === cell.potential);
+                                        const occupant = occupantKey ? labels.find(l => l.key === occupantKey) : null;
+                                        const status = occupantKey && feedback[occupantKey] ? feedback[occupantKey].status : null;
+                                        const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
+                                        return `<div ondragover="handleDragOver(event)" 
+                                                     ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" 
+                                                     class="${cell.tone} ${cell.text} rounded-xl sm:rounded-2xl nine-box-grid-cell min-h-[80px] sm:h-28 p-2 sm:p-3 font-black text-[10px] sm:text-xs flex flex-col justify-between border-2 border-white/60">
+                                            <div class="opacity-90"></div>
+                                            ${occupant ? `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" 
+                                                              ondragstart="handleDragStart('${occupant.key}')" 
+                                                              ondragend="handleDragEnd()" 
+                                                              class="bg-white text-slate-800 rounded-lg sm:rounded-xl px-2 py-1.5 sm:px-3 sm:py-2 text-[9px] sm:text-[11px] font-black ${statusClass} leading-tight">
+                                                ${occupant.label}
+                                            </div>` : '<div class="h-8 sm:h-10"></div>'}
+                                        </div>`;
+                                    }).join('')}
                                 </div>
                             </div>
-                            <div class="grid grid-cols-3 gap-3">
-                                ${gridCells.map(cell => {
-                                    const occupantKey = Object.keys(placements).find(key => placements[key].performance === cell.performance && placements[key].potential === cell.potential);
-                                    const occupant = occupantKey ? labels.find(l => l.key === occupantKey) : null;
-                                    const status = occupantKey && feedback[occupantKey] ? feedback[occupantKey].status : null;
-                                    const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
-                                    return `<div ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" class="${cell.tone} ${cell.text} rounded-2xl h-28 p-3 font-black text-xs flex flex-col justify-between border-2 border-white/60">
-                                        <div class="opacity-90"></div>
-                                        ${occupant ? `<div draggable="${state.isNineBoxSubmitted || timeUp ? 'false' : 'true'}" ondragstart="handleDragStart('${occupant.key}')" ondragend="handleDragEnd()" class="bg-white text-slate-800 rounded-xl px-3 py-2 text-[11px] font-black ${statusClass}">
-                                            ${occupant.label}
-                                        </div>` : '<div class="h-10"></div>'}
-                                    </div>`;
-                                }).join('')}
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-[36px,1fr] gap-3 mt-3 items-center">
-                            <div></div>
-                            <div class="space-y-2">
-                                <div class="flex justify-between text-[10px] font-black uppercase text-slate-400 px-1">
-                                    <span>Low</span><span>Moderate</span><span>High</span>
+                            <div class="grid grid-cols-[24px,1fr] sm:grid-cols-[36px,1fr] gap-2 sm:gap-3 mt-2 sm:mt-3 items-center">
+                                <div></div>
+                                <div class="space-y-1 sm:space-y-2">
+                                    <div class="flex justify-between text-[8px] sm:text-[10px] font-black uppercase text-slate-400 px-0.5 sm:px-1">
+                                        <span>Low</span><span>Mod</span><span>High</span>
+                                    </div>
+                                    <div class="text-center text-[9px] sm:text-xs font-black uppercase tracking-widest text-slate-400">Performance</div>
                                 </div>
-                                <div class="text-center text-xs font-black uppercase tracking-widest text-slate-400">Performance</div>
                             </div>
-                        </div>
                         </div>
                     </section>
 
                     <section class="pt-2">
-                        <button data-submit="nine" ${!state.isNineBoxSubmitted && (!canSubmit || timeUp) ? 'disabled' : ''} onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" class="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">${state.isNineBoxSubmitted ? 'Back to Dashboard' : timeUp ? 'Time Up' : 'Submit Grid'}</button>
+                        <button data-submit="nine" 
+                                ${!state.isNineBoxSubmitted && (!canSubmit || timeUp) ? 'disabled' : ''} 
+                                onclick="${state.isNineBoxSubmitted ? "navigate('LANDING')" : "handleSubmitNineBox()"}" 
+                                class="w-full py-4 sm:py-5 rounded-[2rem] font-black uppercase tracking-widest shadow-xl text-base sm:text-lg ${state.isNineBoxSubmitted ? 'bg-slate-900 text-white' : timeUp ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : canSubmit ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
+                            ${state.isNineBoxSubmitted ? 'Back to Dashboard' : timeUp ? 'Time Up' : 'Submit Grid'}
+                        </button>
                         ${!state.isNineBoxSubmitted ? `<p class="text-center text-[10px] font-bold text-slate-400 mt-2">${placedKeys.length} / ${labels.length} placed</p>` : ''}
                     </section>
                 </main>
@@ -1376,11 +1860,11 @@ function renderLanding() {
                     <div class="flex flex-wrap justify-end gap-2 items-center">
                         <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
                             <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                            <span>${state.team.goldCoins}</span>
+                            <span class="text-diamond">${state.team.goldCoins}</span>
                         </div>
                         <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                            <span>${state.team.silverCoins}</span>
+                            <span class="text-yellow-800">${state.team.silverCoins}</span>
                         </div>
                     </div>
                 </header>
@@ -1446,11 +1930,11 @@ function renderLanding() {
                                 <div class="flex gap-4">
                                     <div class="text-center flex flex-col items-center gap-1">
                                         <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                                        <p class="font-black text-yellow-400 text-lg">${r.goldCoins}</p>
+                                        <p class="font-black text-diamond text-lg">${r.goldCoins}</p>
                                     </div>
                                     <div class="text-center flex flex-col items-center gap-1">
                                         <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                                        <p class="font-black text-slate-300 text-lg">${r.silverCoins}</p>
+                                        <p class="font-black text-yellow-400 text-lg">${r.silverCoins}</p>
                                     </div>
                                 </div>
                             </div>`).join('')}
@@ -1606,11 +2090,11 @@ function renderLanding() {
                     ${isMulti ? `<div class="flex items-center gap-6">
                         <div class="flex flex-col items-center gap-2">
                             <img src="img/diamond-coin.png" alt="Diamond coin" class="w-14 h-14 coin-diamond" />
-                            <span class="font-black text-yellow-600 text-lg">${state.coinPopupDetails.gold}</span>
+                            <span class="font-black text-diamond text-lg">${state.coinPopupDetails.gold}</span>
                         </div>
                         <div class="flex flex-col items-center gap-2">
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-14 h-14" />
-                            <span class="font-black text-slate-500 text-lg">${state.coinPopupDetails.silver}</span>
+                            <span class="font-black text-yellow-600 text-lg">${state.coinPopupDetails.silver}</span>
                         </div>
                     </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>'}
                     ${message ? `<p class="text-sm font-semibold text-slate-600">${message}</p>` : ''}
@@ -1646,123 +2130,111 @@ function renderLanding() {
         };
 
         window.handleLogout = () => { localStorage.removeItem('team_data'); state.team = null; navigate('LOGIN'); };
-        // window.handleScore = (cat, val) => {
-        //     if (state.isSubmitted) return;
-        //     if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
-        //     state.evaluations[cat] = val;
-        //     render();
-        // };
 
-         window.handleScore = (cat, val, btn) => {
-  if (state.isSubmitted) return;
-  if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
+        window.handleScore = (cat, val, btn) => {
+            if (state.isSubmitted) return;
+            if (isRoundTimeUp('ksa')) return alert('Time is up for this round.');
 
-  state.evaluations[cat] = val;
+            state.evaluations[cat] = val;
 
-  // scope to this K / S / A grid only
-  const container = btn.closest('.grid');
+            const container = btn.closest('.grid');
 
-  container.querySelectorAll('button').forEach(b => {
-    // remove active styles
-    b.classList.remove(
-      'bg-sky-600',
-      'text-white',
-      'shadow-2xl',
-      'scale-110',
-      'ring-4',
-      'ring-sky-100',
-      'z-10'
-    );
+            container.querySelectorAll('button').forEach(b => {
+                b.classList.remove(
+                    'bg-sky-600',
+                    'text-white',
+                    'shadow-2xl',
+                    'scale-110',
+                    'ring-4',
+                    'ring-sky-100',
+                    'z-10'
+                );
 
-    // restore inactive styles
-    b.classList.add(
-      'bg-white',
-      'text-slate-500',
-      'border',
-      'border-slate-200'
-    );
-  });
+                b.classList.add(
+                    'bg-white',
+                    'text-slate-500',
+                    'border',
+                    'border-slate-200'
+                );
+            });
 
-  // remove inactive styles from clicked button
-  btn.classList.remove(
-    'bg-white',
-    'text-slate-500',
-    'border',
-    'border-slate-200'
-  );
+            btn.classList.remove(
+                'bg-white',
+                'text-slate-500',
+                'border',
+                'border-slate-200'
+            );
 
-  // apply active styles
-  btn.classList.add(
-    'bg-sky-600',
-    'text-white',
-    'shadow-2xl',
-    'scale-110',
-    'ring-4',
-    'ring-sky-100',
-    'z-10'
-  );
-};
-
-        // window.handlePerformanceScore = (cat, val) => {
-        //     if (state.isPerformanceSubmitted) return;
-        //     if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
-        //     state.performanceEvaluations[cat] = val;
-        //     render();
-        // };
+            btn.classList.add(
+                'bg-sky-600',
+                'text-white',
+                'shadow-2xl',
+                'scale-110',
+                'ring-4',
+                'ring-sky-100',
+                'z-10'
+            );
+        };
 
         window.handlePerformanceScore = (cat, val, btn) => {
-  if (state.isPerformanceSubmitted) return;
-  if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
+            if (state.isPerformanceSubmitted) return;
+            if (isRoundTimeUp('performance')) return alert('Time is up for this round.');
 
-  state.performanceEvaluations[cat] = val;
+            state.performanceEvaluations[cat] = val;
 
-  const container = btn.closest('.grid');
+            const container = btn.closest('.grid');
 
-  container.querySelectorAll('button').forEach(b => {
-    b.classList.remove(
-      'bg-sky-600',
-      'text-white',
-      'shadow-2xl',
-      'scale-110',
-      'ring-4',
-      'ring-sky-100',
-      'z-10'
-    );
+            container.querySelectorAll('button').forEach(b => {
+                b.classList.remove(
+                    'bg-sky-600',
+                    'text-white',
+                    'shadow-2xl',
+                    'scale-110',
+                    'ring-4',
+                    'ring-sky-100',
+                    'z-10'
+                );
 
-    // 👈 restore inactive styles
-    b.classList.add(
-      'bg-white',
-      'text-slate-500',
-      'border',
-      'border-slate-200'
-    );
-  });
+                b.classList.add(
+                    'bg-white',
+                    'text-slate-500',
+                    'border',
+                    'border-slate-200'
+                );
+            });
 
-  // ❗ remove inactive styles from clicked button
-  btn.classList.remove(
-    'bg-white',
-    'text-slate-500',
-    'border',
-    'border-slate-200'
-  );
+            btn.classList.remove(
+                'bg-white',
+                'text-slate-500',
+                'border',
+                'border-slate-200'
+            );
 
-  // ✅ add active styles
-  btn.classList.add(
-    'bg-sky-600',
-    'text-white',
-    'shadow-2xl',
-    'scale-110',
-    'ring-4',
-    'ring-sky-100',
-    'z-10'
-  );
-};
+            btn.classList.add(
+                'bg-sky-600',
+                'text-white',
+                'shadow-2xl',
+                'scale-110',
+                'ring-4',
+                'ring-sky-100',
+                'z-10'
+            );
+        };
 
         window.toggleRubric = (type) => { state.profilePreviewId = null; state.rubricType = type || state.rubricType || 'KSA'; state.isRubricOpen = !state.isRubricOpen; render(); };
         window.closeCoinPopup = () => { state.showCoinPopup = false; render(); };
         window.openProfilePreview = (profileId) => { state.isRubricOpen = false; state.profilePreviewId = profileId; render(); };
         window.closeProfilePreview = () => { state.profilePreviewId = null; render(); };
         window.openRound = (activity, index) => {
+            state.config = normalizeSessionConfig(state.config);
+            if (activity === 'performance') {
+                const enabled = state.config?.performanceRoundsEnabled?.[index] !== false;
+                if (!enabled) return alert('Locked');
+            }
+            if (activity === 'ksa') {
+                const enabled = state.config?.ksaRoundsEnabled?.[index] !== false;
+                if (!enabled) return alert('Locked');
+            }
             const minutes = getRoundDurationMinutes(activity, index);
             if (minutes > 0) {
                 state.pendingTimerStart = { activity, roundIndex: index };
@@ -1850,7 +2322,7 @@ function renderLanding() {
             const { k, s, a } = state.evaluations;
             if (k === null || s === null || a === null) return alert("Score all 3.");
             const p = state.selectedProfile;
-            // Prevent multiple evaluations for the same profile
+            console.log(p)
             if (state.team.completedProfiles.some(cp => (typeof cp === 'string' ? cp === p.id : cp.id === p.id))) {
                 alert("You have already evaluated this profile. You cannot evaluate it again.");
                 state.isSubmitted = true;
@@ -1860,12 +2332,17 @@ function renderLanding() {
             const correctCount = [k === p.answers.k, s === p.answers.s, a === p.answers.a].filter(Boolean).length;
             const silverEarned = correctCount;
             const goldEarned = correctCount === 3 ? 1 : 0;
-            state.team.silverCoins += silverEarned;
-            state.team.goldCoins += goldEarned;
-            const sub = { id: p.id, k, s, a };
+            if  (p.id != "fahd"){
+                console.log(p.id)
+                state.team.silverCoins += silverEarned;
+                state.team.goldCoins += goldEarned;
+            }
+            const sub = { id: p.id, k, s, a, roundIndex: getCurrentKsaRoundIndex(), coins: { diamond: (p.id !== 'fahd' ? goldEarned : 0), gold: (p.id !== 'fahd' ? silverEarned : 0) } };
             state.team.completedProfiles.push(sub);
             state.isSubmitted = true;
-            state.result = correctCount === 3 ? { type: 'gold', msg: "Perfect!" } : correctCount > 0 ? { type: 'silver', msg: `${correctCount}/3 Correct.` } : { type: 'none', msg: "No points." };
+            if  (p.id != "fahd"){
+                state.result = correctCount === 3 ? { type: 'gold', msg: "Perfect!" } : correctCount > 0 ? { type: 'silver', msg: `${correctCount}/3 Correct.` } : { type: 'none', msg: "No points." };
+            }
             state.coinPopupType = 'multi';
             state.coinPopupDetails = {
                 title: 'Activity 3 Results',
@@ -1882,6 +2359,8 @@ function renderLanding() {
             const { performance, potential } = state.performanceEvaluations;
             if (performance === null || potential === null) return alert("Score both fields.");
             const p = state.selectedProfile;
+            console.log(p)
+
             if (state.team.completedPerformanceProfiles.some(cp => (typeof cp === 'string' ? cp === p.id : cp.id === p.id))) {
                 alert("You have already evaluated this profile. You cannot evaluate it again.");
                 state.isPerformanceSubmitted = true;
@@ -1891,11 +2370,14 @@ function renderLanding() {
             const performanceCorrect = performance === p.performancePotential.performance;
             const potentialCorrect = potential === p.performancePotential.potential;
             const silverEarned = (performanceCorrect ? 1 : 0) + (potentialCorrect ? 2 : 0);
-            state.team.silverCoins += silverEarned;
-            const sub = { id: p.id, performance, potential };
+            if  (p.id != "fahd"){
+                console.log(p.id)
+                state.team.silverCoins += silverEarned;
+            }
+            const sub = { id: p.id, performance, potential, roundIndex: getCurrentPerformanceRoundIndex(), coins: { diamond: 0, gold: (p.id !== 'fahd' ? silverEarned : 0) } };
             state.team.completedPerformanceProfiles.push(sub);
             state.isPerformanceSubmitted = true;
-            state.performanceResult = (performanceCorrect && potentialCorrect) ? { type: 'silver', msg: "3/3 Points." } : performanceCorrect || potentialCorrect ? { type: 'silver', msg: `${silverEarned}/3 Points.` } : { type: 'none', msg: "No points." };
+            state.performanceResult = (performanceCorrect && potentialCorrect  ) ? { type: 'silver', msg: "3/3 Points." } : performanceCorrect || potentialCorrect ? { type: 'silver', msg: `${silverEarned}/3 Points.` } : { type: 'none', msg: "No points." };
             state.coinPopupType = 'multi';
             state.coinPopupDetails = {
                 title: 'Activity 1 Results',
@@ -1948,12 +2430,27 @@ function renderLanding() {
         };
 
         window.toggleSessionConfig = (key) => { state.config[key] = !state.config[key]; pushSessionConfig(); render(); };
+        window.toggleRoundStatus = (activity, roundIndex) => {
+            state.config = normalizeSessionConfig(state.config);
+            const idx = Number(roundIndex);
+            if (activity === 'performance') {
+                state.config.performanceRoundsEnabled[idx] = !(state.config.performanceRoundsEnabled[idx] !== false);
+            }
+            if (activity === 'ksa') {
+                state.config.ksaRoundsEnabled[idx] = !(state.config.ksaRoundsEnabled[idx] !== false);
+            }
+            pushSessionConfig();
+            render();
+        };
         window.toggleProfileStatus = (pid) => {
             const index = state.config.activeProfiles.indexOf(pid);
             if (index === -1) state.config.activeProfiles.push(pid); else state.config.activeProfiles.splice(index, 1);
             pushSessionConfig(); render();
         };
-        async function pushSessionConfig() { await apiCall({ action: 'upsert', team: { name: '__SESSION_CONFIG__', role: 'SYSTEM', goldCoins: 0, silverCoins: 0, completedProfiles: [JSON.stringify(state.config)] } }); }
+        async function pushSessionConfig() {
+            state.config = normalizeSessionConfig(state.config);
+            await apiCall({ action: 'upsert', team: { name: '__SESSION_CONFIG__', role: 'SYSTEM', goldCoins: 0, silverCoins: 0, completedProfiles: [JSON.stringify(state.config)] } });
+        }
         
         window.adminAddTeam = async () => {
             const name = prompt("Enter new Team Name:"); if (!name) return;
@@ -1984,7 +2481,6 @@ function renderLanding() {
             if (field === 'roundIndex') state.adminTimerExt.roundIndex = Number(value);
             else state.adminTimerExt[field] = value;
 
-            // Default sensible round when switching activities
             if (field === 'target') {
                 if (value === 'ninebox') {
                     state.adminTimerExt.roundIndex = 0;
@@ -2010,7 +2506,6 @@ function renderLanding() {
         }
 
         window.adminApplyTimerExtension = async () => {
-            // Ensure we have a fresh registry; otherwise ALL teams can be empty and nothing happens.
             if (!Array.isArray(state.registry) || state.registry.length === 0) {
                 await fetchRegistry(true);
             }
@@ -2040,11 +2535,9 @@ function renderLanding() {
             fetchRegistry(false);
         };
 
-        // if (state.team) { navigate('LANDING'); fetchRegistry(); } else navigate('LOGIN');
         if (state.team) { 
-    navigate('LANDING'); 
-} else navigate('LOGIN');
+            navigate('LANDING'); 
+        } else navigate('LOGIN');
     </script>
-    <!-- <script type="module" src="/index.tsx"></script> -->
 </body>
 </html>
