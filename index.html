@@ -765,15 +765,15 @@
                         </button>` : `
                         <button data-activity="activity1" onclick="${state.config.activity1 ? "navigate('PERFORMANCE_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity1 ? 'opacity-50 grayscale' : ''}">
                             <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1: Evaluating Performance &amp; Potential</h3><p class="text-slate-500 font-medium text-sm">Assess performance and potential on a 1-3 scale.</p></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 1</h3></div>
                         </button>
                         <button data-activity="activity2" onclick="${state.config.activity2 ? "openNineBox()" : "alert('Locked')"}" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group ${!state.config.activity2 ? 'opacity-50 grayscale' : ''}">
                             <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2: 9-Box Grid</h3><p class="text-slate-500 font-medium text-sm">Drag box names into the performance/potential grid.</p></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 2</h3></div>
                         </button>
                         <button data-activity="activity3" onclick="${state.config.activity3 ? "navigate('KSA_ROUNDS')" : "alert('Locked')" }" class="w-full bg-white border-2 border-sky-100 p-5 sm:p-8 rounded-[3rem] shadow-xl text-left flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 group transition-all active:scale-[0.98] ${!state.config.activity3 ? 'opacity-50 grayscale' : ''}">
                             <div class="bg-sky-50 p-4 sm:p-5 rounded-[2rem] text-sky-600 transition-all"><svg class="w-8 h-8 sm:w-10 sm:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></div>
-                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3: Evaluating KSA</h3><p class="text-slate-500 font-medium text-sm">Pharmacist evaluation module.</p></div>
+                            <div class="flex-1"><h3 class="text-xl sm:text-2xl font-black text-slate-800">Activity 3</h3></div>
                         </button>
                         `}
                     </div>
@@ -1480,15 +1480,15 @@
 
         function getNineBoxCells() {
             return [
-                { key: 'low-performing-star', performance: 1, potential: 3, label: 'Low Performing Star </br> (Raw Talent)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'rising-star', performance: 2, potential: 3, label: 'Rising Star </br> (Emerging Leader)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'star', performance: 3, potential: 3, label: 'Star </br> (Future Leader)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'low-performing-talent', performance: 1, potential: 2, label: 'Low Performing Talent </br> (Dilemma)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'performing-talent', performance: 2, potential: 2, label: 'Performing Talent </br> (Solid Performer)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'top-performing-talent', performance: 3, potential: 2, label: 'Top Performing Talent  </br> (Key Contributors)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'low-performer', performance: 1, potential: 1, label: 'Low Performer </br> (Bad Hires)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'consistent-performer', performance: 2, potential: 1, label: 'Consistent Performer </br> (Effective Performer)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' },
-                { key: 'peak-performer', performance: 3, potential: 1, label: 'Peak Performer </br> (Workhorses)', tone: 'bg-[#c7cacd]', text: 'text-slate-700' }
+                { key: 'low-performing-star', performance: 1, potential: 3, label: 'Low Performing Star </br> (Raw Talent)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'rising-star', performance: 2, potential: 3, label: 'Rising Star  </br> (Emerging Leader)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'star', performance: 3, potential: 3, label: 'Star </br> (Future Leader)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'low-performing-talent', performance: 1, potential: 2, label: 'Low Performing Talent </br> (Dilemma)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'performing-talent', performance: 2, potential: 2, label: 'Performing Talent </br> (Solid Performer)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'top-performing-talent', performance: 3, potential: 2, label: 'Top Performing Talent </br> (Key Contributors)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'low-performer', performance: 1, potential: 1, label: 'Low Performer </br> (Bad Hires)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'consistent-performer', performance: 2, potential: 1, label: 'Consistent Performer </br> (Effective Performer)', tone: 'bg-[#c7cacd]', text: 'text-white' },
+                { key: 'peak-performer', performance: 3, potential: 1, label: 'Peak Performer </br> (Workhorses)', tone: 'bg-[#c7cacd]', text: 'text-white' }
             ];
         }
 
