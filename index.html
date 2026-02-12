@@ -96,6 +96,8 @@
         // --- API CONFIG ---
         const API_URL = "https://script.google.com/macros/s/AKfycby-xblvn4mvOBMM0IkCvLAYNbpMS5K9TaHoKaiBF4n5NhQyrkTljwsmUWYu9WXTkTrh/exec";
 
+        const SUBMISSION_THANK_YOU_MESSAGE = "Thank You for submitting your answer, the game master will hand your results";
+
         const RUBRIC_DATA = [
             {
                 name: "Knowledge",
@@ -736,17 +738,6 @@
                         <div class="w-10 h-10 bg-sky-600 rounded-full flex items-center justify-center text-white font-black shadow-lg">${state.team.name[0].toUpperCase()}</div>
                         <h2 class="font-black text-slate-800 uppercase text-xs tracking-widest leading-none">${state.team.name}</h2>
                     </div>
-                    ${!isAdmin ? `
-                    <div class="flex items-center gap-2">
-                        <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 font-black text-sm flex items-center gap-2">
-                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-4 h-4 coin-diamond" />
-                            <span class="text-diamond">${state.team.goldCoins}</span>
-                        </div>
-                        <div class="bg-white px-3 py-2 rounded-2xl border border-slate-200 font-black text-sm flex items-center gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4" />
-                            <span class="text-yellow-700">${state.team.silverCoins}</span>
-                        </div>
-                    </div>` : ''}
                     <div class="flex items-center gap-3">
                         <div id="sync-indicator"></div>
                         <button onclick="handleLogout()" class="text-red-500 font-black text-[10px] uppercase border border-red-100 px-3 py-1 rounded-full bg-white">Logout</button>
@@ -1505,16 +1496,7 @@
                     <div class="flex justify-center">
                         ${renderTimerPill('timer-performance-eval', getRoundTimerText('performance', roundIndex))}
                     </div>
-                    <div class="flex flex-wrap justify-end gap-2 items-center">
-                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
-                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                            <span class="text-diamond">${state.team.goldCoins}</span>
-                        </div>
-                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                            <span class="text-yellow-800">${state.team.silverCoins}</span>
-                        </div>
-                    </div>
+                    <div></div>
                 </header>
                 <main class="p-4 sm:p-5 max-w-xl mx-auto space-y-8 animate-pop">
                     <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
@@ -1739,8 +1721,8 @@
         function renderNineBox() {
             const timeUp = isNineBoxTimeUp();
             const savedNineBox = state.team?.completedNineBox || null;
-            const placements = state.isNineBoxSubmitted && savedNineBox?.placementsCorrected ? savedNineBox.placementsCorrected : (state.nineBoxPlacements || {});
-            const feedback = state.isNineBoxSubmitted && savedNineBox?.feedback ? savedNineBox.feedback : {};
+            const placements = state.isNineBoxSubmitted && savedNineBox?.placements ? savedNineBox.placements : (state.nineBoxPlacements || {});
+            const feedback = {};
             const gridCells = getNineBoxCells();
             const labels = [...gridCells]
                 .sort((a, b) => (a.potential - b.potential) || (b.performance - a.performance))
@@ -1757,16 +1739,7 @@
                     <div class="flex justify-center">
                         ${renderTimerPill('timer-ninebox', getNineBoxTimerText())}
                     </div>
-                    <div class="flex flex-wrap justify-end gap-2 items-center">
-                        <div class="bg-yellow-100 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
-                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-4 h-4 sm:w-5 sm:h-5 coin-diamond" />
-                            <span class="text-diamond">${state.team.goldCoins}</span>
-                        </div>
-                        <div class="bg-slate-100 px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-4 h-4 sm:w-5 sm:h-5" />
-                            <span class="text-yellow-800">${state.team.silverCoins}</span>
-                        </div>
-                    </div>
+                    <div></div>
                 </header>
 
                 <main class="p-3 sm:p-6 max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-pop nine-box-container">
@@ -1803,8 +1776,7 @@
                                     ${gridCells.map(cell => {
                                         const occupantKey = Object.keys(placements).find(key => placements[key].performance === cell.performance && placements[key].potential === cell.potential);
                                         const occupant = occupantKey ? labels.find(l => l.key === occupantKey) : null;
-                                        const status = occupantKey && feedback[occupantKey] ? feedback[occupantKey].status : null;
-                                        const statusClass = status === 'correct' ? 'ring-2 ring-green-500 bg-green-50' : status === 'wrong' ? 'ring-2 ring-red-500 bg-red-50' : '';
+                                        const statusClass = state.isNineBoxSubmitted && occupantKey ? 'ring-2 ring-yellow-400 bg-yellow-100' : '';
                                         return `<div ondragover="handleDragOver(event)" 
                                                      ondrop="handleDrop(event, ${cell.performance}, ${cell.potential})" 
                                                      class="${cell.tone} ${cell.text} rounded-xl sm:rounded-2xl nine-box-grid-cell min-h-[80px] sm:h-28 p-2 sm:p-3 font-black text-[10px] sm:text-xs flex flex-col justify-between border-2 border-white/60">
@@ -1857,16 +1829,7 @@
                     <div class="flex justify-center">
                         ${renderTimerPill('timer-ksa-eval', getRoundTimerText('ksa', roundIndex))}
                     </div>
-                    <div class="flex flex-wrap justify-end gap-2 items-center">
-                        <div class="bg-yellow-100 px-4 py-2 rounded-2xl border border-yellow-200 font-black text-yellow-800 text-sm flex items-center gap-2">
-                            <img src="img/diamond-coin.png" alt="Diamond coin" class="w-5 h-5 coin-diamond" />
-                            <span class="text-diamond">${state.team.goldCoins}</span>
-                        </div>
-                        <div class="bg-slate-100 px-4 py-2 rounded-2xl border border-slate-200 font-black text-slate-700 text-sm flex items-center gap-2">
-                            <img src="img/golden-coin.png" alt="Gold coin" class="w-5 h-5" />
-                            <span class="text-yellow-800">${state.team.silverCoins}</span>
-                        </div>
-                    </div>
+                    <div></div>
                 </header>
                 <main class="p-4 sm:p-5 max-w-xl mx-auto space-y-8 animate-pop">
                     <div class="bg-white rounded-[3rem] shadow-2xl overflow-hidden">
@@ -1891,8 +1854,7 @@
             const correctVal = state.selectedProfile.answers[cat];
             if (!state.isSubmitted && isRoundTimeUp('ksa')) return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             if (state.isSubmitted) {
-                if (val === correctVal) return "relative z-10 bg-green-500 text-white border-2 border-green-700 shadow-lg ring-4 ring-green-100";
-                if (val === userVal && val !== correctVal) return "relative z-10 bg-red-50 text-red-700 border-2 border-dotted border-red-600 shadow-inner ring-4 ring-red-50";
+                if (val === userVal) return "relative z-10 bg-yellow-200 text-slate-900 border-2 border-yellow-500 shadow-lg ring-4 ring-yellow-100";
                 return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             }
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
@@ -1904,8 +1866,7 @@
             const correctVal = state.selectedProfile.performancePotential[cat];
             if (!state.isPerformanceSubmitted && isRoundTimeUp('performance')) return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             if (state.isPerformanceSubmitted) {
-                if (val === correctVal) return "relative z-10 bg-green-500 text-white border-2 border-green-700 shadow-lg ring-4 ring-green-100";
-                if (val === userVal && val !== correctVal) return "relative z-10 bg-red-50 text-red-700 border-2 border-dotted border-red-600 shadow-inner ring-4 ring-red-50";
+                if (val === userVal) return "relative z-10 bg-yellow-200 text-slate-900 border-2 border-yellow-500 shadow-lg ring-4 ring-yellow-100";
                 return "bg-slate-50 text-slate-300 opacity-40 border border-slate-100 cursor-not-allowed";
             }
             if (userVal === val) return "bg-sky-600 text-white shadow-2xl scale-110 ring-4 ring-sky-100 z-10";
@@ -1963,23 +1924,26 @@
                 const msg = minutes > 0
                     ? (alreadyStarted ? `This timer is already running. Continue?` : `This round is timed (${minutes} min). Start the timer now?`)
                     : `This round has no timer. Continue?`;
-                const coinRules = isNine
-                    ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
-                        <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                        <div class="text-sm font-semibold text-slate-700">+1 Gold per correct placement</div>
-                    </div>`
-                    : pending.activity === 'performance'
+                const showCoinRules = state.team?.role === 'ADMIN';
+                const coinRules = !showCoinRules
+                    ? ''
+                    : (isNine
                         ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
                             <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                            <div class="text-sm font-semibold text-slate-700">Performance correct: +1 Gold</div>
-                            <div class="text-sm font-semibold text-slate-700">Potential correct: +2 Gold</div>
-                            <div class="text-sm font-semibold text-slate-700">Max per profile: 3 Gold</div>
+                            <div class="text-sm font-semibold text-slate-700">+1 Gold per correct placement</div>
                         </div>`
-                        : `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
-                            <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
-                            <div class="text-sm font-semibold text-slate-700">+1 Gold per correct answer</div>
-                            <div class="text-sm font-semibold text-slate-700">3/3 correct: +1 Diamond bonus</div>
-                        </div>`;
+                        : pending.activity === 'performance'
+                            ? `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+                                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
+                                <div class="text-sm font-semibold text-slate-700">Performance correct: +1 Gold</div>
+                                <div class="text-sm font-semibold text-slate-700">Potential correct: +2 Gold</div>
+                                <div class="text-sm font-semibold text-slate-700">Max per profile: 3 Gold</div>
+                            </div>`
+                            : `<div class="p-4 rounded-2xl border bg-slate-50 space-y-2">
+                                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Coin System</div>
+                                <div class="text-sm font-semibold text-slate-700">+1 Gold per correct answer</div>
+                                <div class="text-sm font-semibold text-slate-700">3/3 correct: +1 Diamond bonus</div>
+                            </div>`);
                 container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-md overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                     <div class="p-6 border-b bg-slate-50 flex items-center justify-between">
                         <h2 class="font-black text-slate-800 uppercase tracking-tight text-lg">Start Timer</h2>
@@ -2070,24 +2034,33 @@
             if (!container) return;
             if (!state.showCoinPopup) { container.classList.add('hidden'); return; }
             container.classList.remove('hidden');
+            const isParticipant = state.team?.role === 'PARTICIPANT';
             const isGold = state.coinPopupType === 'gold';
             const isSilver = state.coinPopupType === 'silver';
             const isMulti = state.coinPopupType === 'multi';
-            const title = state.coinPopupDetails.title || (isMulti ? 'Results' : isGold ? 'Diamond Coin!' : isSilver ? 'Gold Coin!' : 'No Coin');
-            const message = isMulti
-                ? (state.coinPopupDetails.message || 'Coins earned')
-                : isGold
-                    ? (state.coinPopupDetails.message || 'Coins earned: 1 Diamond')
-                    : isSilver
-                        ? (state.coinPopupDetails.message || 'Coins earned: 1 Gold')
-                        : (state.coinPopupDetails.message || 'Coins earned: 0');
-            const coinImg = isGold ? 'img/diamond-coin.png' : isSilver ? 'img/golden-coin.png' : '';
+            const isMessageOnly = state.coinPopupType === 'message' || isParticipant;
+            const title = isMessageOnly
+                ? (state.coinPopupDetails.title || SUBMISSION_THANK_YOU_MESSAGE)
+                : (state.coinPopupDetails.title || (isMulti ? 'Results' : isGold ? 'Diamond Coin!' : isSilver ? 'Gold Coin!' : 'No Coin'));
+            const message = isMessageOnly
+                ? (state.coinPopupDetails.message || '')
+                : (isMulti
+                    ? (state.coinPopupDetails.message || 'Coins earned')
+                    : isGold
+                        ? (state.coinPopupDetails.message || 'Coins earned: 1 Diamond')
+                        : isSilver
+                            ? (state.coinPopupDetails.message || 'Coins earned: 1 Gold')
+                            : (state.coinPopupDetails.message || 'Coins earned: 0'));
+            const coinImg = (!isMessageOnly && (isGold || isSilver)) ? (isGold ? 'img/diamond-coin.png' : 'img/golden-coin.png') : '';
+            const titleClass = isMessageOnly
+                ? 'font-black text-slate-800 tracking-tight text-base sm:text-lg'
+                : 'font-black text-slate-800 uppercase tracking-tight text-xl';
             container.innerHTML = `<div class="bg-white rounded-[3rem] w-full max-w-sm overflow-hidden flex flex-col shadow-2xl animate-pop border-8 border-slate-50">
                 <div class="p-5 sm:p-6 border-b bg-slate-50 text-center">
-                    <h2 class="font-black text-slate-800 uppercase tracking-tight text-xl">${title}</h2>
+                    <h2 class="${titleClass}">${title}</h2>
                 </div>
                 <div class="p-6 sm:p-8 flex flex-col items-center gap-4 text-center">
-                    ${isMulti ? `<div class="flex items-center gap-6">
+                    ${isMessageOnly ? '' : (isMulti ? `<div class="flex items-center gap-6">
                         <div class="flex flex-col items-center gap-2">
                             <img src="img/diamond-coin.png" alt="Diamond coin" class="w-14 h-14 coin-diamond" />
                             <span class="font-black text-diamond text-lg">${state.coinPopupDetails.gold}</span>
@@ -2096,7 +2069,7 @@
                             <img src="img/golden-coin.png" alt="Gold coin" class="w-14 h-14" />
                             <span class="font-black text-yellow-600 text-lg">${state.coinPopupDetails.silver}</span>
                         </div>
-                    </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>'}
+                    </div>` : coinImg ? `<img src="${coinImg}" alt="${title}" class="w-20 h-20 coin-bounce" />` : '<div class="w-20 h-20 rounded-full bg-slate-100"></div>')}
                     ${message ? `<p class="text-sm font-semibold text-slate-600">${message}</p>` : ''}
                 </div>
                 <div class="p-5 sm:p-6 border-t bg-slate-50"><button onclick="closeCoinPopup()" class="w-full py-4 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Continue</button></div>
@@ -2343,13 +2316,8 @@
             if  (p.id != "fahd"){
                 state.result = correctCount === 3 ? { type: 'gold', msg: "Perfect!" } : correctCount > 0 ? { type: 'silver', msg: `${correctCount}/3 Correct.` } : { type: 'none', msg: "No points." };
             }
-            state.coinPopupType = 'multi';
-            state.coinPopupDetails = {
-                title: 'Activity 3 Results',
-                gold: goldEarned,
-                silver: silverEarned,
-                message: `Diamond: ${goldEarned} • Gold: ${silverEarned}`
-            };
+            state.coinPopupType = 'message';
+            state.coinPopupDetails = { title: SUBMISSION_THANK_YOU_MESSAGE, message: '' };
             state.showCoinPopup = true;
             save(); render();
         };
@@ -2378,13 +2346,8 @@
             state.team.completedPerformanceProfiles.push(sub);
             state.isPerformanceSubmitted = true;
             state.performanceResult = (performanceCorrect && potentialCorrect  ) ? { type: 'silver', msg: "3/3 Points." } : performanceCorrect || potentialCorrect ? { type: 'silver', msg: `${silverEarned}/3 Points.` } : { type: 'none', msg: "No points." };
-            state.coinPopupType = 'multi';
-            state.coinPopupDetails = {
-                title: 'Activity 1 Results',
-                gold: 0,
-                silver: silverEarned,
-                message: `Diamond: 0 • Gold: ${silverEarned}`
-            };
+            state.coinPopupType = 'message';
+            state.coinPopupDetails = { title: SUBMISSION_THANK_YOU_MESSAGE, message: '' };
             state.showCoinPopup = true;
             save(); render();
         };
@@ -2417,13 +2380,8 @@
             state.team.silverCoins += silverEarned;
             state.team.completedNineBox = { mode: 'labels', placements: state.nineBoxPlacements, placementsCorrected, feedback, correctCount, goldEarned, silverEarned };
             state.isNineBoxSubmitted = true;
-            state.coinPopupType = 'multi';
-            state.coinPopupDetails = {
-                title: 'Activity 2 Results',
-                gold: goldEarned,
-                silver: silverEarned,
-                message: `Diamond: ${goldEarned} • Gold: ${silverEarned}`
-            };
+            state.coinPopupType = 'message';
+            state.coinPopupDetails = { title: SUBMISSION_THANK_YOU_MESSAGE, message: '' };
             state.showCoinPopup = true;
             save();
             render();
