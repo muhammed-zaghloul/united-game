@@ -196,7 +196,7 @@
 
         // --- TIMER CONFIG ---
         const TIMER_CONFIG = {
-            performanceRounds: [0, 5, 5],
+            performanceRounds: [5, 7, 10],
             ksaRounds: [0, 8, 10],
             nineBoxMinutes: 5
         };
@@ -781,6 +781,8 @@
             ];
 
             const target = state.adminTimerExt?.target || 'performance';
+            const addMinutes = Math.max(1, Math.min(4, Number(state.adminTimerExt?.addMinutes ?? 1) || 1));
+            const addMinutesLabel = `Add +${addMinutes} Minute${addMinutes === 1 ? '' : 's'}`;
             const roundOptions = target === 'performance'
                 ? [
                     { value: 0, label: 'Trial Round' },
@@ -826,7 +828,7 @@
                             </div>
 
                             <div class="pt-4 border-t border-slate-100 space-y-4">
-                                <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Add Time (+1 Minute)</h4>
+                                <h4 class="font-black text-slate-400 uppercase text-[10px] tracking-widest">Add Time</h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div class="space-y-2">
                                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Team</label>
@@ -841,6 +843,15 @@
                                             ${timerTargets.map(tt => `<option value="${tt.key}" ${(state.adminTimerExt.target || 'performance') === tt.key ? 'selected' : ''}>${tt.label}</option>`).join('')}
                                         </select>
                                     </div>
+                                    <div class="space-y-2">
+                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Minutes</label>
+                                        <div class="grid grid-cols-4 gap-2">
+                                            ${[1, 2, 3, 4].map(m => {
+                                                const selected = Number(state.adminTimerExt?.addMinutes ?? 1) === m;
+                                                return `<button onclick="setAdminTimerExt('addMinutes', ${m})" class="py-3 rounded-2xl border-2 font-black text-sm ${selected ? 'bg-sky-50 border-sky-500 text-sky-700' : 'bg-slate-50 border-slate-200 text-slate-700'}">+${m}</button>`;
+                                            }).join('')}
+                                        </div>
+                                    </div>
                                     <div class="space-y-2 ${target === 'ninebox' ? 'sm:col-span-2' : ''}">
                                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Round</label>
                                         ${target === 'ninebox'
@@ -851,7 +862,7 @@
                                         }
                                     </div>
                                 </div>
-                                <button onclick="adminApplyTimerExtension()" class="w-full p-4 rounded-2xl border-2 bg-amber-50 border-amber-200 text-amber-800 font-black text-sm uppercase">Add +1 Minute</button>
+                                <button onclick="adminApplyTimerExtension()" class="w-full p-4 rounded-2xl border-2 bg-amber-50 border-amber-200 text-amber-800 font-black text-sm uppercase">${addMinutesLabel}</button>
                             </div>
                         </div>
                         <div class="bg-white p-5 sm:p-8 rounded-[2.5rem] shadow-xl space-y-6">
@@ -978,8 +989,6 @@
         }
 
         function renderPerformanceRounds() {
-            const completedIds = getCompletedIds(state.team?.completedPerformanceProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds, PERFORMANCE_ROUNDS);
             return `<div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
@@ -991,9 +1000,8 @@
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 1</span>
                     </div>
                     ${PERFORMANCE_ROUNDS.map((round, idx) => {
-                        const isActive = idx <= activeIndex;
                         const isEnabled = state.config?.performanceRoundsEnabled?.[idx] !== false;
-                        const canOpen = isActive && isEnabled;
+                        const canOpen = isEnabled;
                         return `<button onclick="${canOpen ? `openRound('performance', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${canOpen ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
@@ -1047,8 +1055,6 @@
         }
 
         function renderKsaRounds() {
-            const completedIds = getCompletedIds(state.team?.completedProfiles || []);
-            const activeIndex = getActiveRoundIndex(completedIds, KSA_ROUNDS);
             return `<div class="min-h-screen bg-slate-50">
                 <header class="glass sticky top-0 z-40 p-4 flex items-center justify-between border-b">
                     <button onclick="navigate('LANDING')" class="p-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
@@ -1060,9 +1066,8 @@
                         <span class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest">Activity 3</span>
                     </div>
                     ${KSA_ROUNDS.map((round, idx) => {
-                        const isActive = idx <= activeIndex;
                         const isEnabled = state.config?.ksaRoundsEnabled?.[idx] !== false;
-                        const canOpen = isActive && isEnabled;
+                        const canOpen = isEnabled;
                         return `<button onclick="${canOpen ? `openRound('ksa', ${idx})` : ''}" class="w-full text-left px-5 py-3 sm:py-4 rounded-2xl font-black uppercase tracking-widest ${canOpen ? 'bg-sky-900 text-white shadow-lg' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}">
                             ${round.label}
                         </button>`;
@@ -2435,8 +2440,9 @@
         }
 
         window.setAdminTimerExt = (field, value) => {
-            if (!state.adminTimerExt) state.adminTimerExt = { teamName: 'ALL', target: 'performance', roundIndex: 1 };
+            if (!state.adminTimerExt) state.adminTimerExt = { teamName: 'ALL', target: 'performance', roundIndex: 1, addMinutes: 1 };
             if (field === 'roundIndex') state.adminTimerExt.roundIndex = Number(value);
+            else if (field === 'addMinutes') state.adminTimerExt.addMinutes = Math.max(1, Math.min(4, Number(value) || 1));
             else state.adminTimerExt[field] = value;
 
             if (field === 'target') {
@@ -2451,12 +2457,14 @@
 
         async function applyExtensionToTeam(team, spec) {
             const updated = normalizeTeam(JSON.parse(JSON.stringify(team)));
+            const minutesToAdd = Math.max(1, Math.min(4, Number(spec.addMinutes ?? 1) || 1));
+            const msToAdd = minutesToAdd * 60 * 1000;
             if (spec.target === 'ninebox') {
-                updated.timers.nineBoxEndMs = extendTimerEndMs(updated.timers.nineBoxEndMs, 60 * 1000);
+                updated.timers.nineBoxEndMs = extendTimerEndMs(updated.timers.nineBoxEndMs, msToAdd);
             } else {
                 const roundIndex = Number(spec.roundIndex);
                 const existing = getTeamRoundEndMs(updated, spec.target, roundIndex);
-                const next = extendTimerEndMs(existing, 60 * 1000);
+                const next = extendTimerEndMs(existing, msToAdd);
                 setTeamRoundEndMs(updated, spec.target, roundIndex, next);
             }
             upsertTimerMeta(updated);
@@ -2468,12 +2476,13 @@
                 await fetchRegistry(true);
             }
 
-            const spec = state.adminTimerExt || { teamName: 'ALL', target: 'performance', roundIndex: 1 };
+            const spec = state.adminTimerExt || { teamName: 'ALL', target: 'performance', roundIndex: 1, addMinutes: 1 };
             const teamName = spec.teamName || 'ALL';
             const target = spec.target || 'performance';
             const roundIndex = Number(spec.roundIndex);
+            const addMinutes = Math.max(1, Math.min(4, Number(spec.addMinutes ?? 1) || 1));
 
-            const normalizedSpec = { teamName, target, roundIndex };
+            const normalizedSpec = { teamName, target, roundIndex, addMinutes };
 
             if (teamName === 'ALL') {
                 const teams = state.registry.filter(t => t.role === 'PARTICIPANT');
